@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
     reels.forEach((reel, idx) => {
       setTimeout(() => {
         let randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-        reel.src = `assets/${randomSymbol}`;
+        reel.src = `/assets/${randomSymbol}`;
         result[idx] = randomSymbol;
       }, idx * 200);
     });
