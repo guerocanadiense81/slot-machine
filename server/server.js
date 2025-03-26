@@ -11,44 +11,62 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "defaultSecret";
 
+// Enable CORS and parse JSON bodies
 app.use(cors());
 app.use(bodyParser.json());
-// Serve static files from project root so that paths like "css/style.css" work
+
+// 1) Serve everything from the project root
 app.use(express.static(path.join(__dirname, '..')));
 
-// Serve HTML files explicitly from /views
-app.get('/index.html', (req, res) => {
+// 2) Define routes for each HTML file in /views
+
+// Root => index.html
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
+
+// Serve paid.html
 app.get('/paid.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'paid.html'));
 });
+
+// Serve about.html
 app.get('/about.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'about.html'));
 });
+
+// Serve instructions.html
 app.get('/instructions.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'instructions.html'));
 });
+
+// Serve contact.html
 app.get('/contact.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'contact.html'));
 });
+
+// Serve admin-login.html
 app.get('/admin-login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin-login.html'));
 });
+
+// Serve admin.html
 app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
 });
 
-// In-memory storage for win percentage and transactions
+// 3) In-memory storage for win percentage and transactions
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
 
-// API endpoint to get win percentage
+// 4) API endpoints
+
+// Get current win percentage
 app.get('/api/get-win-percentage', (req, res) => {
   res.json({ percentage: winPercentage });
 });
 
-// API endpoint to set win percentage
+// Set new win percentage
 app.post('/api/set-win-percentage', (req, res) => {
   const { percentage } = req.body;
   if (typeof percentage === 'number' && percentage >= 0 && percentage <= 100) {
@@ -59,19 +77,19 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// API endpoint to record transactions
+// Record a transaction (simulation)
 app.post('/api/record-transaction', (req, res) => {
   const { address, amount, status } = req.body;
   transactions.push({ address, amount, status, date: new Date() });
   res.json({ success: true });
 });
 
-// API endpoint to get transactions
+// Get transaction log
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
-// API endpoint to download transactions as CSV
+// Download transaction log as CSV
 app.get('/api/download-transactions', (req, res) => {
   let csvContent = "Address,Amount MET,Status,Date\n";
   transactions.forEach(tx => {
@@ -82,7 +100,7 @@ app.get('/api/download-transactions', (req, res) => {
   res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
 });
 
-// Admin Login Endpoint
+// Admin Login
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -93,11 +111,12 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// Contact Form Endpoint (sends message to Telegram)
+// Contact Form => sends message to Telegram
 app.post('/contact', async (req, res) => {
   const { name, email, message } = req.body;
-  if (!name || !email || !message)
+  if (!name || !email || !message) {
     return res.status(400).json({ error: "All fields required" });
+  }
   
   const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
   const text = `New Contact Submission:\nName: ${name}\nEmail: ${email}\nMessage: ${message}`;
@@ -110,6 +129,7 @@ app.post('/contact', async (req, res) => {
   }
 });
 
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
