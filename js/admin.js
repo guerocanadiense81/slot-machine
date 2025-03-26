@@ -1,40 +1,43 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    // Load current win percentage
-    const winInput = document.getElementById("winPercentageInput");
-    const res = await fetch("/api/get-win-percentage");
-    const data = await res.json();
-    winInput.value = data.percentage;
+// Set your backend URL (Render URL)
+const API_URL = 'https://slot-machine-a08c.onrender.com';
 
-    // Load transaction log
-    const logDiv = document.getElementById("transactionLog");
-    fetch("/api/transactions")
-        .then(response => response.json())
-        .then(data => {
-            logDiv.innerHTML = data.transactions.map(tx => `
-                <div>
-                    <strong>${tx.address}</strong> - ${tx.amount} MET - ${tx.status} - ${new Date(tx.date).toLocaleString()}
-                </div>
-            `).join('');
-        });
+document.addEventListener("DOMContentLoaded", async () => {
+  // Load current win percentage
+  const winInput = document.getElementById("winPercentageInput");
+  const res = await fetch(`${API_URL}/api/get-win-percentage`);
+  const data = await res.json();
+  winInput.value = data.percentage;
+
+  // Load transaction log
+  const logDiv = document.getElementById("transactionLog");
+  fetch(`${API_URL}/api/transactions`)
+    .then(response => response.json())
+    .then(data => {
+      logDiv.innerHTML = data.transactions.map(tx => `
+        <div>
+          <strong>${tx.address}</strong> - ${tx.amount} MET - ${tx.status} - ${new Date(tx.date).toLocaleString()}
+        </div>
+      `).join('');
+    });
 });
 
 async function updateWinPercentage() {
-    const percentage = parseInt(document.getElementById("winPercentageInput").value);
-    if (isNaN(percentage) || percentage < 0 || percentage > 100) {
-        alert("Please enter a valid percentage between 0 and 100");
-        return;
-    }
-    const res = await fetch('https://your-backend-app.onrender.com/api/get-win-percentage')
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ percentage })
-    });
-    const data = await res.json();
-    if (data.success) {
-        alert("Win percentage updated!");
-    }
+  const percentage = parseInt(document.getElementById("winPercentageInput").value);
+  if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+    alert("Please enter a valid percentage between 0 and 100");
+    return;
+  }
+  const res = await fetch(`${API_URL}/api/set-win-percentage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ percentage })
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Win percentage updated!");
+  }
 }
 
 function downloadCSV() {
-    window.location.href = "/api/download-transactions";
+  window.location.href = `${API_URL}/api/download-transactions`;
 }
