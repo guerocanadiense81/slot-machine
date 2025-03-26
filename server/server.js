@@ -25,6 +25,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
 
+// Also serve index.html for /index.html
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+});
+
 // Serve paid.html
 app.get('/paid.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'paid.html'));
