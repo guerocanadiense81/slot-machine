@@ -1,0 +1,133 @@
+/* General Styles */
+body {
+    margin: 0;
+    background: linear-gradient(to top, #000, #1f513b) fixed;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+nav {
+    background: #222;
+    padding: 10px;
+}
+nav a {
+    color: white;
+    margin: 0 15px;
+    text-decoration: none;
+}
+
+h1 {
+    color: white;
+    margin-top: 10px;
+}
+
+/* Points Tab */
+.points-tab {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+}
+.point {
+    background: #fff;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 16px;
+}
+.point img {
+    height: 20px;
+    vertical-align: middle;
+}
+
+/* Slot Machine */
+#slot-machine {
+    position: relative;
+    width: 600px;
+    height: 450px; /* Increased height slightly */
+    margin: 0 auto;
+    background-image: url("../assets/slotmachine.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 30px; /* Extra top padding if needed */
+}
+
+/* Reel Container (Inside the Machine) */
+.reel-container {
+    position: absolute;
+    top: 150px;
+    left: 135px;
+    width: 330px;
+    height: 100px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Individual Reel Slots */
+.reel {
+    width: 110px;
+    height: 220px;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.reel img {
+    width: 109px;
+    height: 90px;
+}
+
+/* Controls (Bet Buttons) */
+.controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+.bet {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin: 0 5px;
+}
+.bet img {
+    width: 60px;
+    transition: transform 0.2s;
+}
+.bet img:hover {
+    transform: scale(1.1);
+}
+
+/* Bottom Controls */
+.bottom-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+.spinBtn {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+#resetBtn img {
+    width: 70px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+#resetBtn img:hover {
+    transform: scale(0.9);
+}
+
+/* Credits Display */
+#totalCredits {
+    font-size: 20px;
+    color: white;
+    font-weight: bold;
+    margin-top: 20px;
+}

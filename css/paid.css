@@ -1,0 +1,56 @@
+@import url('style.css');
+
+/* Override for Paid Version */
+#slot-machine {
+    width: 600px;
+    height: 450px;
+    margin: 0 auto;
+    background-image: url("../assets/slotmachine.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 30px;
+}
+
+.reel-container {
+    position: absolute;
+    top: 150px;
+    left: 135px;
+    width: 330px;
+    height: 100px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.reel {
+    width: 110px;
+    height: 220px;
+    background: black;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel img {
+    width: 109px;
+    height: 90px;
+}
+
+#connectWallet {
+    background: #f0ad4e;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.points-tab, .controls, .bottom-controls, #totalCredits {
+    margin-top: 10px;
+}
