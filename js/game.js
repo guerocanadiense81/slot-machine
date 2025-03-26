@@ -50,11 +50,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const spinReel = (reelElement, finalSymbol, delay) => {
       let interval = setInterval(() => {
         let randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-        reelElement.innerHTML = `<img src="assets/${randomSymbol}.png" alt="${randomSymbol}" width="80px">`;
+        reelElement.innerHTML = `<img src="/assets/${randomSymbol}.png" alt="${randomSymbol}" width="80px">`;
       }, 100);
       setTimeout(() => {
         clearInterval(interval);
-        reelElement.innerHTML = `<img src="assets/${finalSymbol}.png" alt="${finalSymbol}" width="80px">`;
+        reelElement.innerHTML = `<img src="/assets/${finalSymbol}.png" alt="${finalSymbol}" width="80px">`;
       }, delay);
     };
 
