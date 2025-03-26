@@ -24,7 +24,7 @@ async function updateWinPercentage() {
         alert("Please enter a valid percentage between 0 and 100");
         return;
     }
-    const res = await fetch("/api/set-win-percentage", {
+    const res = await fetch('https://your-backend-app.onrender.com/api/get-win-percentage')
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ percentage })
