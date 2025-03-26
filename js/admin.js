@@ -1,5 +1,5 @@
 // Set your backend URL (Render URL)
-const API_URL = 'https://slot-machine-a08c.onrender.com';
+const API_URL = 'https://slot-machine-a08c.onrender.com/';
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Load current win percentage
