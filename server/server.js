@@ -11,14 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "defaultSecret";
 
-// Enable CORS and JSON parsing
 app.use(cors());
 app.use(bodyParser.json());
-
-// Serve static files from the project root (so paths like "css/style.css" work)
+// Serve static files from project root so that paths like "css/style.css" work
 app.use(express.static(path.join(__dirname, '..')));
 
-// Explicitly serve HTML files from /views so they can be accessed at the root URL
+// Serve HTML files explicitly from /views
 app.get('/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
@@ -34,16 +32,11 @@ app.get('/instructions.html', (req, res) => {
 app.get('/contact.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'contact.html'));
 });
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
-});
 app.get('/admin-login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin-login.html'));
 });
-
-// Optional: Set default route to index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
 });
 
 // In-memory storage for win percentage and transactions
@@ -100,7 +93,7 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// Contact Form Endpoint (Sends message to Telegram)
+// Contact Form Endpoint (sends message to Telegram)
 app.post('/contact', async (req, res) => {
   const { name, email, message } = req.body;
   if (!name || !email || !message)
