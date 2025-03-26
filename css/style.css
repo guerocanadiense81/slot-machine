@@ -45,7 +45,7 @@ h1 {
     width: 600px;
     height: 450px; /* Increased height slightly */
     margin: 0 auto;
-    background-image: url("assets/slotmachine.png");
+    background-image: url("/assets/slotmachine.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
