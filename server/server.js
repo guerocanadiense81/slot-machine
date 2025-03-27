@@ -57,10 +57,10 @@ const metTokenContract = new web3.eth.Contract(metTokenABI, metTokenAddress);
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from project root (absolute paths like /css/style.css work)
+// Serve static files from project root
 app.use(express.static(path.join(__dirname, '..')));
 
-// Explicitly serve HTML files from /views
+// Serve HTML files from /views
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
@@ -86,17 +86,13 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
 });
 
-// In-memory storage for win percentage, transaction logs, and paused state
+// In-memory storage for win percentage, transactions, and paused state
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
-let paused = false; // indicates if the game is paused
+let paused = false;
 
-// API endpoint: Get win percentage
-app.get('/api/get-win-percentage', (req, res) => {
-  res.json({ percentage: winPercentage });
-});
-
-// API endpoint: Set win percentage
+// API endpoints for win percentage and pause state (unchanged)
+app.get('/api/get-win-percentage', (req, res) => { res.json({ percentage: winPercentage }); });
 app.post('/api/set-win-percentage', (req, res) => {
   const { percentage } = req.body;
   if (typeof percentage === 'number' && percentage >= 0 && percentage <= 100) {
@@ -106,48 +102,70 @@ app.post('/api/set-win-percentage', (req, res) => {
     res.status(400).json({ error: 'Invalid percentage value' });
   }
 });
+app.get('/api/get-paused', (req, res) => { res.json({ paused }); });
+app.post('/api/pause', (req, res) => { paused = true; res.json({ success: true, paused }); });
+app.post('/api/unpause', (req, res) => { paused = false; res.json({ success: true, paused }); });
 
-// API endpoint: Get paused state
-app.get('/api/get-paused', (req, res) => {
-  res.json({ paused });
-});
-
-// API endpoint: Pause game
-app.post('/api/pause', (req, res) => {
-  paused = true;
-  res.json({ success: true, paused });
-});
-
-// API endpoint: Unpause game
-app.post('/api/unpause', (req, res) => {
-  paused = false;
-  res.json({ success: true, paused });
-});
-
-// API endpoint: Record transaction
+// Transaction endpoints (unchanged)
 app.post('/api/record-transaction', (req, res) => {
   const { address, amount, status } = req.body;
   transactions.push({ address, amount, status, date: new Date() });
   res.json({ success: true });
 });
-
-// API endpoint: Get transactions
-app.get('/api/transactions', (req, res) => {
-  res.json({ transactions });
-});
-
-// API endpoint: Download transactions as CSV
+app.get('/api/transactions', (req, res) => { res.json({ transactions }); });
 app.get('/api/download-transactions', (req, res) => {
   let csvContent = "Address,Amount MET,Status,Date\n";
-  transactions.forEach(tx => {
-    csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date}\n`;
-  });
+  transactions.forEach(tx => { csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date}\n`; });
   const filePath = path.join(__dirname, 'transactions.csv');
   fs.writeFileSync(filePath, csvContent);
   res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
 });
 
-// Admin Login Endpoint
+// New endpoint: Update House Wallet
+app.post('/api/update-house-wallet', async (req, res) => {
+  const { newHouseWallet } = req.body;
+  if (!newHouseWallet) {
+    return res.status(400).json({ error: "Missing newHouseWallet address" });
+  }
+  try {
+    const tx = metTokenContract.methods.updateHouseWallet(newHouseWallet);
+    const gas = await tx.estimateGas({ from: account.address });
+    const gasPrice = await web3.eth.getGasPrice();
+    const data = tx.encodeABI();
+    const txData = {
+      from: account.address,
+      to: metTokenAddress,
+      data,
+      gas,
+      gasPrice
+    };
+    const receipt = await web3.eth.sendTransaction(txData);
+    res.json({ success: true, receipt });
+  } catch (error) {
+    console.error("Error updating house wallet:", error);
+    res.status(500).json({ error: "Failed to update house wallet" });
+  }
+});
+
+// New endpoint: Clear Transaction Logs
+app.post('/api/clear-transactions', (req, res) => {
+  transactions = [];
+  res.json({ success: true });
+});
+
+// New endpoint: Get Metrics (simulate summary statistics)
+app.get('/api/metrics', (req, res) => {
+  let totalBought = 0, totalWins = 0, totalLosses = 0, totalSettled = 0;
+  transactions.forEach(tx => {
+    if (tx.status === "bought") totalBought += parseFloat(tx.amount);
+    if (tx.status === "win") totalWins += parseFloat(tx.amount);
+    if (tx.status === "loss") totalLosses += parseFloat(tx.amount);
+    if (tx.status === "settled") totalSettled += parseFloat(tx.amount);
+  });
+  res.json({ totalBought, totalWins, totalLosses, totalSettled });
+});
+
+// Admin Login Endpoint (unchanged)
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -167,7 +185,7 @@ app.post('/api/settle-session', (req, res) => {
       const { walletAddress, credits } = JSON.parse(body);
       console.log(`Settling session for ${walletAddress} with final balance: ${credits}`);
       
-      // If credits is 0, then no settlement is needed.
+      // If credits is 0, no settlement needed.
       if (credits === 0) {
         console.log("No settlement needed (credits 0).");
         return res.json({ success: true, message: "No settlement needed (credits 0)" });
@@ -177,12 +195,11 @@ app.post('/api/settle-session', (req, res) => {
       const feePercentage = 2;
       
       if (credits > 0) {
-        // Calculate fee in MET tokens (1 MET = 1 USD)
         let feeInMET = (credits * feePercentage) / 100;
         let netWin = credits - feeInMET;
         const netWinWei = web3.utils.toWei(netWin.toString(), 'ether');
 
-        // Call winBet on the contract to transfer net winnings from house wallet to player
+        // Call winBet on the contract
         const winTx = metTokenContract.methods.winBet(walletAddress, netWinWei);
         const gasWin = await winTx.estimateGas({ from: account.address });
         const gasPriceWin = await web3.eth.getGasPrice();
@@ -197,7 +214,7 @@ app.post('/api/settle-session', (req, res) => {
         const winReceipt = await web3.eth.sendTransaction(txDataWin);
         console.log("winBet receipt:", winReceipt);
 
-        // Convert fee from MET (USD equivalent) to BNB using current BNB price
+        // Convert fee from MET to BNB
         const bnbPriceUSD = await getBNBPriceUSD();
         if (!bnbPriceUSD) {
           throw new Error("Failed to fetch BNB price for fee conversion");
@@ -211,7 +228,6 @@ app.post('/api/settle-session', (req, res) => {
         });
         console.log("Fee transaction receipt:", feeTx);
       } else if (credits < 0) {
-        // Player lost: convert loss amount to Wei
         let loss = Math.abs(credits);
         const lossWei = web3.utils.toWei(loss.toString(), 'ether');
         const loseTx = metTokenContract.methods.loseBet(walletAddress, lossWei);
@@ -231,7 +247,6 @@ app.post('/api/settle-session', (req, res) => {
         console.log("No settlement needed.");
       }
       
-      // Record settlement transaction (simulation)
       transactions.push({
         address: walletAddress,
         amount: credits,
@@ -251,10 +266,7 @@ app.post('/api/settle-session', (req, res) => {
 async function getBNBPriceUSD() {
   try {
     const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: {
-        ids: 'binancecoin',
-        vs_currencies: 'usd'
-      }
+      params: { ids: 'binancecoin', vs_currencies: 'usd' }
     });
     return response.data.binancecoin.usd;
   } catch (error) {
@@ -269,29 +281,20 @@ app.post('/api/buy-met', async (req, res) => {
   if (!walletAddress || !bnbAmount) {
     return res.status(400).json({ error: "Missing wallet address or BNB amount" });
   }
-
   try {
     const bnbPriceUSD = await getBNBPriceUSD();
     const metAmount = bnbAmount * bnbPriceUSD;  // 1 MET = 1 USD conversion
     const metAmountWei = web3.utils.toWei(metAmount.toString(), 'ether');
 
-    // Prepare transaction to call purchaseTokens(buyer, amount)
     const tx = metTokenContract.methods.purchaseTokens(walletAddress, metAmountWei);
     const gas = await tx.estimateGas({ from: account.address });
     const gasPrice = await web3.eth.getGasPrice();
     const data = tx.encodeABI();
-    const txData = {
-      from: account.address,
-      to: metTokenAddress,
-      data,
-      gas,
-      gasPrice
-    };
+    const txData = { from: account.address, to: metTokenAddress, data, gas, gasPrice };
 
     const receipt = await web3.eth.sendTransaction(txData);
     console.log("Purchase transaction receipt:", receipt);
     
-    // Record the purchase transaction in our log (simulation)
     transactions.push({
       address: walletAddress,
       amount: metAmount,
