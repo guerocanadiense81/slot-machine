@@ -23,15 +23,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       `).join('');
     });
 
-  // Load metrics (optional)
-  const metricsRes = await fetch(`${API_URL}/api/metrics`);
-  const metricsData = await metricsRes.json();
-  document.getElementById("metrics").innerHTML = `
-    <p>Total Purchased: ${metricsData.totalBought} MET</p>
-    <p>Total Wins: ${metricsData.totalWins} MET</p>
-    <p>Total Losses: ${metricsData.totalLosses} MET</p>
-    <p>Net Settled: ${metricsData.totalSettled} MET</p>
-  `;
+  // Optionally, load metrics if endpoint is available
+  if(document.getElementById("metrics")){
+    const metricsRes = await fetch(`${API_URL}/api/metrics`);
+    const metricsData = await metricsRes.json();
+    document.getElementById("metrics").innerHTML = `
+      <p>Total Purchased: ${metricsData.totalBought} MET</p>
+      <p>Total Wins: ${metricsData.totalWins} MET</p>
+      <p>Total Losses: ${metricsData.totalLosses} MET</p>
+      <p>Net Settled: ${metricsData.totalSettled} MET</p>
+    `;
+  }
 });
 
 async function updateWinPercentage() {
@@ -112,7 +114,44 @@ function downloadCSV() {
   window.location.href = `${API_URL}/api/download-transactions`;
 }
 
-// Log out function
+// Function to refresh live MET balance for a given wallet address (for admin metrics)
+async function refreshMetrics() {
+  const walletAddress = document.getElementById("metricsWallet").value;
+  if (!walletAddress) {
+    alert("Please enter a wallet address to check metrics.");
+    return;
+  }
+  // Minimal ABI for balanceOf
+  const tokenABI = [
+    {
+      "constant": true,
+      "inputs": [{ "name": "_owner", "type": "address" }],
+      "name": "balanceOf",
+      "outputs": [{ "name": "balance", "type": "uint256" }],
+      "type": "function"
+    }
+  ];
+  // Replace with your MET token contract address
+  const tokenAddress = "0xCFa63A2B76120dda8992Ac9cc5A8Ba7079b0bd29";
+  let web3;
+  if(window.ethereum){
+    web3 = new Web3(window.ethereum);
+  } else {
+    // Fall back to a public RPC if needed
+    web3 = new Web3("https://bsc-dataseed.binance.org/");
+  }
+  try {
+    const tokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
+    const balanceWei = await tokenContract.methods.balanceOf(walletAddress).call();
+    const balance = web3.utils.fromWei(balanceWei, "ether");
+    document.getElementById("walletMetrics").innerText = `MET Balance: ${balance}`;
+  } catch (error) {
+    console.error("Error fetching wallet metrics:", error);
+    alert("Error fetching wallet metrics");
+  }
+}
+
+// Logout function
 function logout() {
   localStorage.removeItem("adminToken");
   window.location.href = "/admin-login.html";
