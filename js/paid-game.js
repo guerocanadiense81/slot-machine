@@ -1,16 +1,16 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const API_URL = 'https://slot-machine-a08c.onrender.com'; // Backend URL, if needed for other calls
+  const API_URL = 'https://slot-machine-a08c.onrender.com'; // Backend URL
 
-  let credits = 0; // We'll fetch MET balance from wallet
+  let credits = 0; // Player's MET balance (fetched from the wallet)
   let currentBet = 0;
-  let winPercentage = 30; // Default win percentage; will be updated from backend if needed
+  let winPercentage = 30; // Default win percentage; updated from backend if needed
 
   const balanceDisplay = document.getElementById("metBalance");
   const spinBtn = document.getElementById("spinBtn");
   const betButtons = document.querySelectorAll(".bet");
   const reels = document.querySelectorAll(".reel img");
 
-  // Minimal ABI for ERC-20 Token (only balanceOf function)
+  // Minimal ABI for ERC-20 Token (only the balanceOf function)
   const tokenABI = [
     {
       "constant": true,
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
       "type": "function"
     }
   ];
-  // Replace with your MET token contract address:
+  // Replace with your actual MET token contract address:
   const tokenAddress = "0xD88AA293D71803d35132daDfc5a83F991f6021c6";
 
   // Create a Web3 instance using MetaMask's provider
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Bind wallet connection button if exists
+  // Bind wallet connection button if it exists
   const connectWalletBtn = document.getElementById("connectWallet");
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", connectWalletAndFetchBalance);
@@ -125,7 +125,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Update balance on page load
   updateBalance();
-
-  // Optionally, fetch MET balance when page loads (if wallet already connected)
   fetchMETBalance();
+
+  // Cash Out functionality: When the player clicks Cash Out, send settlement data to the backend
+  async function cashOut() {
+    const accounts = await web3.eth.getAccounts();
+    if (!accounts || accounts.length === 0) {
+      alert("No wallet connected!");
+      return;
+    }
+    const walletAddress = accounts[0];
+    const settlementData = JSON.stringify({ walletAddress, credits });
+    fetch(`${API_URL}/api/settle-session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: settlementData
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert("Cash out successful!");
+          credits = 0;
+          updateBalance();
+        } else {
+          alert("Cash out failed: " + result.error);
+        }
+      })
+      .catch(err => {
+        console.error("Error during cash out:", err);
+        alert("Error during cash out.");
+      });
+  }
+
+  // Bind the cash out button if it exists
+  const cashOutBtn = document.getElementById("cashOutBtn");
+  if (cashOutBtn) {
+    cashOutBtn.addEventListener("click", cashOut);
+  }
 });
