@@ -12,9 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || 'defaultSecret';
 
-// Initialize Web3 using the BSC RPC URL and add the private key from environment variables
+// Initialize Web3 using BSC RPC and add PRIVATE_KEY to the wallet
 const web3 = new Web3(process.env.BSC_RPC_URL);
-const PRIVATE_KEY = process.env.PRIVATE_KEY; // Set in .env (never expose this publicly)
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
 web3.eth.accounts.wallet.add(account);
 
@@ -57,10 +57,10 @@ const metTokenContract = new web3.eth.Contract(metTokenABI, metTokenAddress);
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve the entire project root so that absolute paths (e.g., /css/style.css) work
+// Serve static files from project root (absolute paths like /css/style.css work)
 app.use(express.static(path.join(__dirname, '..')));
 
-// Serve HTML files from /views explicitly
+// Explicitly serve HTML files from /views
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
 });
@@ -91,12 +91,12 @@ let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
 let paused = false; // indicates if the game is paused
 
-// API endpoint to get win percentage
+// API endpoint: Get win percentage
 app.get('/api/get-win-percentage', (req, res) => {
   res.json({ percentage: winPercentage });
 });
 
-// API endpoint to set win percentage
+// API endpoint: Set win percentage
 app.post('/api/set-win-percentage', (req, res) => {
   const { percentage } = req.body;
   if (typeof percentage === 'number' && percentage >= 0 && percentage <= 100) {
@@ -107,36 +107,36 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// API endpoint to get paused state
+// API endpoint: Get paused state
 app.get('/api/get-paused', (req, res) => {
   res.json({ paused });
 });
 
-// API endpoint to pause the game
+// API endpoint: Pause game
 app.post('/api/pause', (req, res) => {
   paused = true;
   res.json({ success: true, paused });
 });
 
-// API endpoint to unpause the game
+// API endpoint: Unpause game
 app.post('/api/unpause', (req, res) => {
   paused = false;
   res.json({ success: true, paused });
 });
 
-// API endpoint to record transactions
+// API endpoint: Record transaction
 app.post('/api/record-transaction', (req, res) => {
   const { address, amount, status } = req.body;
   transactions.push({ address, amount, status, date: new Date() });
   res.json({ success: true });
 });
 
-// API endpoint to get transactions
+// API endpoint: Get transactions
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
-// API endpoint to download transactions as CSV
+// API endpoint: Download transactions as CSV
 app.get('/api/download-transactions', (req, res) => {
   let csvContent = "Address,Amount MET,Status,Date\n";
   transactions.forEach(tx => {
@@ -158,7 +158,7 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// Settlement endpoint: Called via sendBeacon when a player leaves
+// Settlement endpoint: Called via sendBeacon or Cash Out
 app.post('/api/settle-session', (req, res) => {
   let body = '';
   req.on('data', chunk => { body += chunk.toString(); });
@@ -167,17 +167,16 @@ app.post('/api/settle-session', (req, res) => {
       const { walletAddress, credits } = JSON.parse(body);
       console.log(`Settling session for ${walletAddress} with final balance: ${credits}`);
       
-      // Define fee percentage (e.g., 2% fee on winnings)
+      // Assume a fee of 2% on winnings (only if credits > 0)
       const feePercentage = 2;
       
       if (credits > 0) {
-        // Player is winning
         // Calculate fee in MET tokens (1 MET = 1 USD)
         let feeInMET = (credits * feePercentage) / 100;
         let netWin = credits - feeInMET;
         const netWinWei = web3.utils.toWei(netWin.toString(), 'ether');
 
-        // Call the smart contract's winBet function to transfer net winnings
+        // Call winBet on the contract to transfer net winnings from house wallet to player
         const winTx = metTokenContract.methods.winBet(walletAddress, netWinWei);
         const gasWin = await winTx.estimateGas({ from: account.address });
         const gasPriceWin = await web3.eth.getGasPrice();
@@ -192,12 +191,11 @@ app.post('/api/settle-session', (req, res) => {
         const winReceipt = await web3.eth.sendTransaction(txDataWin);
         console.log("winBet receipt:", winReceipt);
 
-        // Now convert feeInMET (USD equivalent) to BNB
+        // Convert fee from MET (USD) to BNB using current BNB price
         const bnbPriceUSD = await getBNBPriceUSD();
         if (!bnbPriceUSD) {
           throw new Error("Failed to fetch BNB price for fee conversion");
         }
-        // BNB fee = feeInMET / bnbPriceUSD
         let feeInBNB = feeInMET / bnbPriceUSD;
         const feeValue = web3.utils.toWei(feeInBNB.toString(), 'ether');
         const feeTx = await web3.eth.sendTransaction({
@@ -207,7 +205,7 @@ app.post('/api/settle-session', (req, res) => {
         });
         console.log("Fee transaction receipt:", feeTx);
       } else if (credits < 0) {
-        // Player is at a net loss
+        // Player lost: convert loss amount to Wei
         let loss = Math.abs(credits);
         const lossWei = web3.utils.toWei(loss.toString(), 'ether');
         const loseTx = metTokenContract.methods.loseBet(walletAddress, lossWei);
@@ -226,7 +224,7 @@ app.post('/api/settle-session', (req, res) => {
       } else {
         console.log("No settlement needed.");
       }
-
+      
       // Record settlement transaction (simulation)
       transactions.push({
         address: walletAddress,
@@ -243,7 +241,7 @@ app.post('/api/settle-session', (req, res) => {
   });
 });
 
-// Endpoint to buy MET tokens using BNB (1 MET = 1 USD conversion)
+// Endpoint to fetch BNB price in USD using CoinGecko API
 async function getBNBPriceUSD() {
   try {
     const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
@@ -259,6 +257,7 @@ async function getBNBPriceUSD() {
   }
 }
 
+// Endpoint to buy MET tokens using BNB (1 MET = 1 USD conversion)
 app.post('/api/buy-met', async (req, res) => {
   const { walletAddress, bnbAmount } = req.body;
   if (!walletAddress || !bnbAmount) {
@@ -286,7 +285,7 @@ app.post('/api/buy-met', async (req, res) => {
     const receipt = await web3.eth.sendTransaction(txData);
     console.log("Purchase transaction receipt:", receipt);
     
-    // Record purchase transaction in our log (simulation)
+    // Record the purchase transaction in our log (simulation)
     transactions.push({
       address: walletAddress,
       amount: metAmount,
