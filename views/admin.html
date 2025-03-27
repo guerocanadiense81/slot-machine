@@ -1,21 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/admin.css" />
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
+    <nav>
+      <a href="/">Home</a>
+    </nav>
   </header>
   <main>
+    <!-- Win Percentage Section -->
     <section id="winPercentageSection">
       <h2>Set Win Percentage</h2>
-      <input type="number" id="winPercentageInput" min="0" max="100" placeholder="Enter win %">
+      <input type="number" id="winPercentageInput" min="0" max="100" placeholder="Enter win %" />
       <button onclick="updateWinPercentage()">Update</button>
     </section>
+
+    <!-- Pause/Unpause Section -->
+    <section id="pauseSection">
+      <h2>Game Control</h2>
+      <p>Status: <span id="pausedStatus">Unknown</span></p>
+      <button onclick="pauseGame()">Pause Game</button>
+      <button onclick="unpauseGame()">Unpause Game</button>
+    </section>
+
+    <!-- Transaction Log Section -->
     <section id="transactionSection">
       <h2>Transaction History</h2>
       <div id="transactionLog"></div>
