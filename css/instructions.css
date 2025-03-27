@@ -1,0 +1,6 @@
+/* instructions.css */
+/* This will override the default font color with a neon green effect */
+body {
+  color: #39FF14; /* Neon green */
+  text-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14;
+}
