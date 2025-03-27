@@ -11,7 +11,7 @@ header {
     margin-bottom: 20px;
 }
 
-nav a {
+nav a, nav button {
     color: white;
     text-decoration: none;
     margin: 0 15px;
@@ -45,7 +45,7 @@ button {
     border: 1px solid #555;
 }
 
-/* Display pause status */
+/* For displaying pause/unpause status */
 #pausedStatus {
     font-size: 18px;
     margin-top: 10px;
