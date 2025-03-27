@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   ];
   // Replace with your MET token contract address:
-  const tokenAddress = "0xCFa63A2B76120dda8992Ac9cc5A8Ba7079b0bd29";
+  const tokenAddress = "0xD88AA293D71803d35132daDfc5a83F991f6021c6";
 
   // Create a Web3 instance using MetaMask's provider
   let web3;
