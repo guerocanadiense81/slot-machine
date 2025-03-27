@@ -1,50 +1,70 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract METToken {
-    string public name = "MET Token";
-    string public symbol = "MET";
-    uint8 public decimals = 18;
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-    address public owner;
+contract METToken is ERC20, Ownable, Pausable {
+    // House wallet for collecting losses
     address public houseWallet;
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    constructor(uint256 _initialSupply, address _houseWallet) {
-        owner = msg.sender;
+    // Constructor mints initial supply and sets the house wallet.
+    constructor(uint256 initialSupply, address _houseWallet) ERC20("MET Token", "MET") {
+        require(_houseWallet != address(0), "Invalid house wallet address");
         houseWallet = _houseWallet;
-        totalSupply = _initialSupply * 10 ** uint256(decimals);
-        balanceOf[owner] = totalSupply;
+        _mint(msg.sender, initialSupply * 10 ** decimals());
     }
 
-    // Standard transfer function
-    function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(balanceOf[msg.sender] >= _value, "Insufficient balance");
-        balanceOf[msg.sender] -= _value;
-        balanceOf[_to] += _value;
-        emit Transfer(msg.sender, _to, _value);
+    // Pause the contract (only owner)
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    // Unpause the contract (only owner)
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @dev Transfer tokens from the house wallet to the buyer (for purchases or awarding winnings).
+     * Can only be called by the owner.
+     */
+    function purchaseTokens(address buyer, uint256 amount) external onlyOwner whenNotPaused returns (bool) {
+        require(buyer != address(0), "Invalid buyer address");
+        require(balanceOf(houseWallet) >= amount, "Insufficient house balance");
+        _transfer(houseWallet, buyer, amount);
         return true;
     }
 
-    // Purchase tokens: players send BNB and MET tokens are transferred from house wallet to player
-    // Note: In practice, you'll need to handle payable and conversion; this is simplified.
-    function purchaseTokens(address buyer, uint256 metAmount) public returns (bool success) {
-        require(balanceOf[houseWallet] >= metAmount, "House wallet has insufficient tokens");
-        balanceOf[houseWallet] -= metAmount;
-        balanceOf[buyer] += metAmount;
-        emit Transfer(houseWallet, buyer, metAmount);
+    /**
+     * @dev Award winnings by transferring tokens from the house wallet to the player.
+     * Can only be called by the owner.
+     */
+    function winBet(address player, uint256 amount) external onlyOwner whenNotPaused returns (bool) {
+        require(player != address(0), "Invalid player address");
+        require(balanceOf(houseWallet) >= amount, "Insufficient house balance");
+        _transfer(houseWallet, player, amount);
         return true;
     }
 
-    // Lose bet: transfer tokens from player to house wallet
-    function loseBet(address player, uint256 betAmount) public returns (bool success) {
-        require(balanceOf[player] >= betAmount, "Insufficient balance");
-        balanceOf[player] -= betAmount;
-        balanceOf[houseWallet] += betAmount;
-        emit Transfer(player, houseWallet, betAmount);
+    /**
+     * @dev Deduct bet tokens from the player to the house wallet on loss.
+     * Can only be called by the owner.
+     */
+    function loseBet(address player, uint256 amount) external onlyOwner whenNotPaused returns (bool) {
+        require(player != address(0), "Invalid player address");
+        require(balanceOf(player) >= amount, "Player has insufficient tokens");
+        _transfer(player, houseWallet, amount);
         return true;
+    }
+
+    /**
+     * @dev Update the house wallet address.
+     * Can only be called by the owner.
+     */
+    function updateHouseWallet(address newHouseWallet) external onlyOwner whenNotPaused {
+        require(newHouseWallet != address(0), "Invalid address");
+        houseWallet = newHouseWallet;
     }
 }
