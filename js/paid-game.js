@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const API_URL = 'https://slot-machine-a08c.onrender.com'; // Backend URL
 
-  let credits = 0; // Player's MET balance (fetched from the wallet)
+  let credits = 0; // Start with 0 MET until wallet is connected
   let currentBet = 0;
   let winPercentage = 30; // Default win percentage; updated from backend if needed
 
@@ -10,7 +10,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const betButtons = document.querySelectorAll(".bet");
   const reels = document.querySelectorAll(".reel img");
 
-  // Minimal ABI for ERC-20 Token (only the balanceOf function)
+  // Disable Spin button until wallet is connected
+  spinBtn.disabled = true;
+
+  // Minimal ABI for ERC-20 Token (only balanceOf function)
   const tokenABI = [
     {
       "constant": true,
@@ -21,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   ];
   // Replace with your actual MET token contract address:
-  const tokenAddress = "0xD88AA293D71803d35132daDfc5a83F991f6021c6";
+  const tokenAddress = "0xCFa63A2B76120dda8992Ac9cc5A8Ba7079b0bd29";
 
   // Create a Web3 instance using MetaMask's provider
   let web3;
@@ -45,6 +48,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Assuming MET token uses 18 decimals:
       credits = parseFloat(web3.utils.fromWei(balanceWei, "ether"));
       updateBalance();
+      // Enable the Spin button once the balance is fetched
+      spinBtn.disabled = false;
     } catch (err) {
       console.error("Error fetching MET balance:", err);
     }
@@ -59,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(res => res.json())
     .then(data => winPercentage = data.percentage);
 
-  // Update MET balance after connecting wallet
+  // Function to connect wallet and fetch MET balance
   async function connectWalletAndFetchBalance() {
     if (window.ethereum) {
       try {
@@ -123,11 +128,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   spinBtn.addEventListener("click", spinReels);
 
-  // Update balance on page load
+  // Update balance on page load (remains 0 until wallet is connected)
   updateBalance();
   fetchMETBalance();
 
-  // Cash Out functionality: When the player clicks Cash Out, send settlement data to the backend
+  // Cash Out functionality: Sends final balance to backend for settlement,
+  // then re-fetches the wallet balance from the blockchain
   async function cashOut() {
     const accounts = await web3.eth.getAccounts();
     if (!accounts || accounts.length === 0) {
@@ -145,8 +151,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(result => {
         if (result.success) {
           alert("Cash out successful!");
-          credits = 0;
-          updateBalance();
+          // After cash out, re-fetch the on-chain balance
+          fetchMETBalance();
         } else {
           alert("Cash out failed: " + result.error);
         }
