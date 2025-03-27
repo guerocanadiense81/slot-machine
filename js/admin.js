@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const data = await res.json();
   winInput.value = data.percentage;
 
-  // Load paused state and update display (assumes an element with id "pausedStatus")
+  // Load paused state and update display
   const pauseStatus = await fetch(`${API_URL}/api/get-paused`).then(res => res.json());
   document.getElementById("pausedStatus").textContent = pauseStatus.paused ? "Paused" : "Active";
 
@@ -22,6 +22,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `).join('');
     });
+
+  // Load metrics (optional)
+  const metricsRes = await fetch(`${API_URL}/api/metrics`);
+  const metricsData = await metricsRes.json();
+  document.getElementById("metrics").innerHTML = `
+    <p>Total Purchased: ${metricsData.totalBought} MET</p>
+    <p>Total Wins: ${metricsData.totalWins} MET</p>
+    <p>Total Losses: ${metricsData.totalLosses} MET</p>
+    <p>Net Settled: ${metricsData.totalSettled} MET</p>
+  `;
 });
 
 async function updateWinPercentage() {
@@ -65,6 +75,45 @@ async function unpauseGame() {
   }
 }
 
+async function updateHouseWallet() {
+  const newHouseWallet = document.getElementById("newHouseWallet").value;
+  if (!newHouseWallet) {
+    alert("Please enter a new house wallet address.");
+    return;
+  }
+  const res = await fetch(`${API_URL}/api/update-house-wallet`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newHouseWallet })
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("House wallet updated!");
+  } else {
+    alert("Failed to update house wallet.");
+  }
+}
+
+async function clearTransactions() {
+  const res = await fetch(`${API_URL}/api/clear-transactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Transaction log cleared.");
+    document.getElementById("transactionLog").innerHTML = "";
+  } else {
+    alert("Failed to clear transaction log.");
+  }
+}
+
 function downloadCSV() {
   window.location.href = `${API_URL}/api/download-transactions`;
+}
+
+// Log out function
+function logout() {
+  localStorage.removeItem("adminToken");
+  window.location.href = "/admin-login.html";
 }
