@@ -43,7 +43,7 @@ h1 {
 #slot-machine {
     position: relative;
     width: 600px;
-    height: 450px; /* Increased height slightly */
+    height: 450px;
     margin: 0 auto;
     background-image: url("/assets/slotmachine.png");
     background-size: contain;
@@ -52,7 +52,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-top: 30px; /* Extra top padding if needed */
+    padding-top: 30px;
 }
 
 /* Reel Container (Inside the Machine) */
@@ -111,7 +111,6 @@ h1 {
 }
 .spinBtn {
     padding: 10px 20px;
-    margin: 5px;
     font-size: 16px;
     cursor: pointer;
 }
