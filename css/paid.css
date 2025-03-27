@@ -11,10 +11,25 @@
     margin-top: 15px;
 }
 
-#buyMetSection {
+/* Buy MET and Cash Out sections with neon flash green effect */
+#buyMetSection, 
+#cashOutSection {
     margin-top: 20px;
     border-top: 1px solid #ccc;
     padding-top: 20px;
+    animation: neonFlash 1.5s ease-in-out infinite;
+}
+
+/* Neon flash animation */
+@keyframes neonFlash {
+  0%, 100% {
+    color: #39FF14; /* Neon green */
+    text-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14;
+  }
+  50% {
+    color: #FFFFFF;
+    text-shadow: 0 0 20px #39FF14, 0 0 30px #39FF14;
+  }
 }
 
 #buyMetSection input {
@@ -27,10 +42,4 @@
     padding: 8px 12px;
     font-size: 16px;
     cursor: pointer;
-}
-
-#cashOutSection {
-    margin-top: 20px;
-    border-top: 1px solid #ccc;
-    padding-top: 20px;
 }
