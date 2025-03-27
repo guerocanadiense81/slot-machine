@@ -11,6 +11,7 @@
     <h1>Admin Dashboard</h1>
     <nav>
       <a href="/">Home</a>
+      <button id="logoutBtn">Logout</button>
     </nav>
   </header>
   <main>
@@ -29,11 +30,29 @@
       <button onclick="unpauseGame()">Unpause Game</button>
     </section>
 
+    <!-- House Wallet Management Section -->
+    <section id="houseWalletSection">
+      <h2>Update House Wallet</h2>
+      <input type="text" id="newHouseWallet" placeholder="Enter new house wallet address" />
+      <button onclick="updateHouseWallet()">Update</button>
+    </section>
+
+    <!-- Metrics Section -->
+    <section id="metricsSection">
+      <h2>Metrics</h2>
+      <div id="metrics">
+        <!-- Summary stats will be inserted here -->
+      </div>
+    </section>
+
     <!-- Transaction Log Section -->
     <section id="transactionSection">
       <h2>Transaction History</h2>
-      <div id="transactionLog"></div>
+      <div id="transactionLog">
+        <!-- Transaction log will be displayed here -->
+      </div>
       <button onclick="downloadCSV()">Download CSV</button>
+      <button id="clearLogsBtn" onclick="clearTransactions()">Clear Logs</button>
     </section>
   </main>
   <script src="/js/admin.js"></script>
