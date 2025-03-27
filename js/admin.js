@@ -1,4 +1,3 @@
-// Set your backend URL (Render URL)
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -7,6 +6,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const res = await fetch(`${API_URL}/api/get-win-percentage`);
   const data = await res.json();
   winInput.value = data.percentage;
+
+  // Load paused state and update display (assumes an element with id "pausedStatus")
+  const pauseStatus = await fetch(`${API_URL}/api/get-paused`).then(res => res.json());
+  document.getElementById("pausedStatus").textContent = pauseStatus.paused ? "Paused" : "Active";
 
   // Load transaction log
   const logDiv = document.getElementById("transactionLog");
@@ -35,6 +38,30 @@ async function updateWinPercentage() {
   const data = await res.json();
   if (data.success) {
     alert("Win percentage updated!");
+  }
+}
+
+async function pauseGame() {
+  const res = await fetch(`${API_URL}/api/pause`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Game paused");
+    document.getElementById("pausedStatus").textContent = "Paused";
+  }
+}
+
+async function unpauseGame() {
+  const res = await fetch(`${API_URL}/api/unpause`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("Game unpaused");
+    document.getElementById("pausedStatus").textContent = "Active";
   }
 }
 
