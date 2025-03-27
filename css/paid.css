@@ -1,8 +1,6 @@
 @import url('style.css');
 
 /* Additional styling for Paid Version */
-
-/* Wallet Connection Button */
 #connectWallet {
     background: #f0ad4e;
     color: white;
@@ -13,16 +11,7 @@
     margin-top: 15px;
 }
 
-/* Buy MET and Cash Out sections with neon flash green effect */
-#buyMetSection, 
-#cashOutSection {
-    margin-top: 20px;
-    border-top: 1px solid #ccc;
-    padding-top: 20px;
-    animation: neonFlash 1.5s ease-in-out infinite;
-}
-
-/* Neon flash animation */
+/* Neon flash animation for Buy MET and Cash Out sections */
 @keyframes neonFlash {
   0%, 100% {
     color: #39FF14; /* Neon green */
@@ -34,7 +23,14 @@
   }
 }
 
-/* Additional input and button styling for Buy MET section */
+#buyMetSection,
+#cashOutSection {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+    animation: neonFlash 1.5s ease-in-out infinite;
+}
+
 #buyMetSection input {
     padding: 8px;
     font-size: 16px;
@@ -46,5 +42,3 @@
     font-size: 16px;
     cursor: pointer;
 }
-
-/* All other styles (including image sizing, layout, etc.) are inherited from style.css */
