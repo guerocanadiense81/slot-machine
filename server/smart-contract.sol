@@ -9,7 +9,7 @@ contract METToken is ERC20, Ownable, Pausable {
     // House wallet where tokens from losses are collected
     address public houseWallet;
 
-    // Constructor mints the initial supply to the owner and sets the house wallet.
+    // Constructor mints initial supply and sets the house wallet.
     constructor(uint256 initialSupply, address _houseWallet) ERC20("MET Token", "MET") {
         require(_houseWallet != address(0), "Invalid house wallet address");
         houseWallet = _houseWallet;
