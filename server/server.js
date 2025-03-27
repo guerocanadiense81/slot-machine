@@ -167,6 +167,12 @@ app.post('/api/settle-session', (req, res) => {
       const { walletAddress, credits } = JSON.parse(body);
       console.log(`Settling session for ${walletAddress} with final balance: ${credits}`);
       
+      // If credits is 0, then no settlement is needed.
+      if (credits === 0) {
+        console.log("No settlement needed (credits 0).");
+        return res.json({ success: true, message: "No settlement needed (credits 0)" });
+      }
+      
       // Assume a fee of 2% on winnings (only if credits > 0)
       const feePercentage = 2;
       
@@ -191,7 +197,7 @@ app.post('/api/settle-session', (req, res) => {
         const winReceipt = await web3.eth.sendTransaction(txDataWin);
         console.log("winBet receipt:", winReceipt);
 
-        // Convert fee from MET (USD) to BNB using current BNB price
+        // Convert fee from MET (USD equivalent) to BNB using current BNB price
         const bnbPriceUSD = await getBNBPriceUSD();
         if (!bnbPriceUSD) {
           throw new Error("Failed to fetch BNB price for fee conversion");
