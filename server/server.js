@@ -6,16 +6,58 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const Web3 = require('web3');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || 'defaultSecret';
 
-// Enable CORS and JSON body parsing
+// Initialize Web3 using the BSC RPC URL and add the private key from environment variables
+const web3 = new Web3(process.env.BSC_RPC_URL);
+const PRIVATE_KEY = process.env.PRIVATE_KEY; // Set in .env (never expose this publicly)
+const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
+web3.eth.accounts.wallet.add(account);
+
+// Minimal MET Token ABI (update with your full ABI as needed)
+const metTokenABI = [
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "buyer", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "purchaseTokens",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "player", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "loseBet",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "player", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "name": "winBet",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "type": "function"
+  }
+];
+const metTokenAddress = process.env.MET_CONTRACT_ADDRESS;
+const metTokenContract = new web3.eth.Contract(metTokenABI, metTokenAddress);
+
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve the entire project root so that references like "/assets/..." work
+// Serve the entire project root so that absolute paths (e.g., /css/style.css) work
 app.use(express.static(path.join(__dirname, '..')));
 
 // Serve HTML files from /views explicitly
@@ -44,20 +86,17 @@ app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
 });
 
-// In-memory storage for win percentage and transactions
+// In-memory storage for win percentage, transaction logs, and paused state
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
+let paused = false; // indicates if the game is paused
 
-// -------------------------
-// API ENDPOINTS
-// -------------------------
-
-// Get win percentage
+// API endpoint to get win percentage
 app.get('/api/get-win-percentage', (req, res) => {
   res.json({ percentage: winPercentage });
 });
 
-// Set win percentage
+// API endpoint to set win percentage
 app.post('/api/set-win-percentage', (req, res) => {
   const { percentage } = req.body;
   if (typeof percentage === 'number' && percentage >= 0 && percentage <= 100) {
@@ -68,19 +107,36 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Record a transaction (for simulation)
+// API endpoint to get paused state
+app.get('/api/get-paused', (req, res) => {
+  res.json({ paused });
+});
+
+// API endpoint to pause the game
+app.post('/api/pause', (req, res) => {
+  paused = true;
+  res.json({ success: true, paused });
+});
+
+// API endpoint to unpause the game
+app.post('/api/unpause', (req, res) => {
+  paused = false;
+  res.json({ success: true, paused });
+});
+
+// API endpoint to record transactions
 app.post('/api/record-transaction', (req, res) => {
   const { address, amount, status } = req.body;
   transactions.push({ address, amount, status, date: new Date() });
   res.json({ success: true });
 });
 
-// Get transaction log
+// API endpoint to get transactions
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
-// Download transactions as CSV
+// API endpoint to download transactions as CSV
 app.get('/api/download-transactions', (req, res) => {
   let csvContent = "Address,Amount MET,Status,Date\n";
   transactions.forEach(tx => {
@@ -91,7 +147,7 @@ app.get('/api/download-transactions', (req, res) => {
   res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
 });
 
-// Admin login endpoint
+// Admin Login Endpoint
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -102,7 +158,92 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// New Endpoint: Buy MET using BNB
+// Settlement endpoint: Called via sendBeacon when a player leaves
+app.post('/api/settle-session', (req, res) => {
+  let body = '';
+  req.on('data', chunk => { body += chunk.toString(); });
+  req.on('end', async () => {
+    try {
+      const { walletAddress, credits } = JSON.parse(body);
+      console.log(`Settling session for ${walletAddress} with final balance: ${credits}`);
+      
+      // Define fee percentage (e.g., 2% fee on winnings)
+      const feePercentage = 2;
+      
+      if (credits > 0) {
+        // Player is winning
+        // Calculate fee in MET tokens (1 MET = 1 USD)
+        let feeInMET = (credits * feePercentage) / 100;
+        let netWin = credits - feeInMET;
+        const netWinWei = web3.utils.toWei(netWin.toString(), 'ether');
+
+        // Call the smart contract's winBet function to transfer net winnings
+        const winTx = metTokenContract.methods.winBet(walletAddress, netWinWei);
+        const gasWin = await winTx.estimateGas({ from: account.address });
+        const gasPriceWin = await web3.eth.getGasPrice();
+        const dataWin = winTx.encodeABI();
+        const txDataWin = {
+          from: account.address,
+          to: metTokenAddress,
+          data: dataWin,
+          gas: gasWin,
+          gasPrice: gasPriceWin
+        };
+        const winReceipt = await web3.eth.sendTransaction(txDataWin);
+        console.log("winBet receipt:", winReceipt);
+
+        // Now convert feeInMET (USD equivalent) to BNB
+        const bnbPriceUSD = await getBNBPriceUSD();
+        if (!bnbPriceUSD) {
+          throw new Error("Failed to fetch BNB price for fee conversion");
+        }
+        // BNB fee = feeInMET / bnbPriceUSD
+        let feeInBNB = feeInMET / bnbPriceUSD;
+        const feeValue = web3.utils.toWei(feeInBNB.toString(), 'ether');
+        const feeTx = await web3.eth.sendTransaction({
+          from: account.address,
+          to: process.env.BNB_FEES_WALLET_ADDRESS,
+          value: feeValue
+        });
+        console.log("Fee transaction receipt:", feeTx);
+      } else if (credits < 0) {
+        // Player is at a net loss
+        let loss = Math.abs(credits);
+        const lossWei = web3.utils.toWei(loss.toString(), 'ether');
+        const loseTx = metTokenContract.methods.loseBet(walletAddress, lossWei);
+        const gasLose = await loseTx.estimateGas({ from: account.address });
+        const gasPriceLose = await web3.eth.getGasPrice();
+        const dataLose = loseTx.encodeABI();
+        const txDataLose = {
+          from: account.address,
+          to: metTokenAddress,
+          data: dataLose,
+          gas: gasLose,
+          gasPrice: gasPriceLose
+        };
+        const loseReceipt = await web3.eth.sendTransaction(txDataLose);
+        console.log("loseBet receipt:", loseReceipt);
+      } else {
+        console.log("No settlement needed.");
+      }
+
+      // Record settlement transaction (simulation)
+      transactions.push({
+        address: walletAddress,
+        amount: credits,
+        status: "settled",
+        date: new Date()
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error during settlement:", error);
+      res.status(500).json({ error: "Settlement failed" });
+    }
+  });
+});
+
+// Endpoint to buy MET tokens using BNB (1 MET = 1 USD conversion)
 async function getBNBPriceUSD() {
   try {
     const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
@@ -125,25 +266,42 @@ app.post('/api/buy-met', async (req, res) => {
   }
 
   try {
-    // Get current BNB price in USD from CoinGecko
     const bnbPriceUSD = await getBNBPriceUSD();
-    // Calculate MET tokens: 1 MET = $1 USD
-    const metAmount = bnbAmount * bnbPriceUSD;
+    const metAmount = bnbAmount * bnbPriceUSD;  // 1 MET = 1 USD conversion
+    const metAmountWei = web3.utils.toWei(metAmount.toString(), 'ether');
+
+    // Prepare transaction to call purchaseTokens(buyer, amount)
+    const tx = metTokenContract.methods.purchaseTokens(walletAddress, metAmountWei);
+    const gas = await tx.estimateGas({ from: account.address });
+    const gasPrice = await web3.eth.getGasPrice();
+    const data = tx.encodeABI();
+    const txData = {
+      from: account.address,
+      to: metTokenAddress,
+      data,
+      gas,
+      gasPrice
+    };
+
+    const receipt = await web3.eth.sendTransaction(txData);
+    console.log("Purchase transaction receipt:", receipt);
     
-    // Here, you would interact with your smart contract to transfer MET tokens.
-    // For simulation, we log the transaction and record it.
-    console.log(`Player ${walletAddress} buys ${metAmount} MET for ${bnbAmount} BNB (BNB Price: $${bnbPriceUSD})`);
+    // Record purchase transaction in our log (simulation)
+    transactions.push({
+      address: walletAddress,
+      amount: metAmount,
+      status: "bought",
+      date: new Date()
+    });
     
-    // Record transaction (simulate successful purchase)
-    transactions.push({ address: walletAddress, amount: metAmount, status: "bought", date: new Date() });
-    
-    res.json({ success: true, metAmount });
+    res.json({ success: true, metAmount, txHash: receipt.transactionHash });
   } catch (error) {
+    console.error("Error processing MET purchase:", error);
     res.status(500).json({ error: "Failed to process MET purchase" });
   }
 });
 
-// Contact Form endpoint (sends message to Telegram)
+// Contact Form Endpoint (sends message to Telegram)
 app.post('/contact', async (req, res) => {
   const { name, email, message } = req.body;
   if (!name || !email || !message)
