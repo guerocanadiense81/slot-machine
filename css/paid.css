@@ -1,46 +1,6 @@
 @import url('style.css');
 
-/* Override for Paid Version */
-#slot-machine {
-    width: 600px;
-    height: 450px;
-    margin: 0 auto;
-    background-image: url("/assets/slotmachine.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 30px;
-}
-
-.reel-container {
-    position: absolute;
-    top: 150px;
-    left: 135px;
-    width: 330px;
-    height: 100px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.reel {
-    width: 110px;
-    height: 220px;
-    background: black;
-    border-radius: 10px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.reel img {
-    width: 109px;
-    height: 90px;
-}
-
+/* Additional styling for Paid Version */
 #connectWallet {
     background: #f0ad4e;
     color: white;
@@ -51,6 +11,26 @@
     margin-top: 15px;
 }
 
-.points-tab, .controls, .bottom-controls, #totalCredits {
-    margin-top: 10px;
+#buyMetSection {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+}
+
+#buyMetSection input {
+    padding: 8px;
+    font-size: 16px;
+    width: 150px;
+}
+
+#buyMetSection button {
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#cashOutSection {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
 }
