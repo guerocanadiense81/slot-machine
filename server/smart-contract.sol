@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract METToken is ERC20, Ownable, Pausable {
-    // House wallet for collecting losses
+    // House wallet where tokens from losses are collected
     address public houseWallet;
 
-    // Constructor mints initial supply and sets the house wallet.
+    // Constructor mints the initial supply to the owner and sets the house wallet.
     constructor(uint256 initialSupply, address _houseWallet) ERC20("MET Token", "MET") {
         require(_houseWallet != address(0), "Invalid house wallet address");
         houseWallet = _houseWallet;
