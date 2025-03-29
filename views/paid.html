@@ -21,10 +21,11 @@
   <h1>🎰 Paid Slot Machine</h1>
 
   <div class="points-tab">
-    <div id="walletAddress">Wallet: Not Connected</div>
     <div class="point">Balance: <span id="metBalance">0</span> MET</div>
     <div class="point"><button id="connectWallet">Connect Wallet</button></div>
   </div>
+
+  <div id="walletAddress" style="color: #39FF14; margin-bottom: 10px;"></div>
 
   <section id="slot-machine">
     <div class="reel-container">
@@ -54,7 +55,6 @@
   <!-- Buy MET Section -->
   <section id="buyMetSection">
     <h2>🪙 Buy MET Tokens</h2>
-
     <p>Enter either <strong>USD</strong> or <strong>BNB</strong>:</p>
     <input type="number" id="usdAmount" placeholder="Enter USD" />
     <input type="number" id="bnbAmount" placeholder="Or Enter BNB" />
@@ -65,6 +65,11 @@
 
     <button id="buyNowBtn">Buy Now</button>
   </section>
+
+  <footer style="margin-top: 30px; font-size: 14px; color: gray;">
+    <p>Powered by MET Token | Binance Smart Chain</p>
+    <p>© 2025 Slot Machine DApp | <a href="https://t.me/yourchannel" target="_blank">Telegram</a> | <a href="https://github.com/guerocanadiense81" target="_blank">GitHub</a></p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="/js/wallet.js"></script>
