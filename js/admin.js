@@ -1,3 +1,4 @@
+// /js/admin.js
 document.addEventListener("DOMContentLoaded", function () {
   const API_URL = 'https://slot-machine-a08c.onrender.com';
 
