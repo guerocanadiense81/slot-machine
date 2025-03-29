@@ -1,86 +1,71 @@
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
-document.addEventListener("DOMContentLoaded", function () {
-  let credits = 1000; // Default starting credits
-  let currentBet = 0;
-  let winPercentage = 30;
+let winPercentage = 30;
+let credits = 0;
+let currentBet = 0;
 
-  const balanceDisplay = document.getElementById("totalCredits");
+document.addEventListener("DOMContentLoaded", () => {
+  fetch(`${API_URL}/api/get-win-percentages`)
+    .then(res => res.json())
+    .then(data => winPercentage = data.free);
+
   const spinBtn = document.getElementById("spinBtn");
   const resetBtn = document.getElementById("resetBtn");
   const reels = document.querySelectorAll(".reel img");
   const betButtons = document.querySelectorAll(".bet");
 
   const payouts = {
-    "ch": 50,
-    "s7": 10,
-    "sc": 5,
-    "b3": 4,
-    "b2": 3,
-    "b1": 2
+    "ch": 50, "s7": 10, "sc": 5, "b3": 4, "b2": 3, "b1": 2
   };
 
-  // Update UI
-  function updateBalance() {
-    balanceDisplay.textContent = `${credits.toFixed(2)} Credits`;
-  }
+  const symbols = ["b1.png", "b2.png", "b3.png", "ch.png", "s7.png", "sc.png"];
 
-  // Fetch win % for Free Game
-  fetch(`${API_URL}/api/get-win-percentages`)
-    .then(res => res.json())
-    .then(data => winPercentage = data.free || 30);
-
-  // Bet selection
-  const betValues = [1, 5, 10, 50, 100, 1000];
-  betButtons.forEach((button, index) => {
-    button.addEventListener("click", () => {
-      currentBet = betValues[index];
-      console.log(`Selected bet: ${currentBet} credits`);
+  betButtons.forEach((btn, idx) => {
+    const betVals = [1, 5, 10, 50, 100, 1000];
+    btn.addEventListener("click", () => {
+      currentBet = betVals[idx];
+      console.log(`Bet: ${currentBet}`);
     });
   });
 
-  // Reset button logic
   resetBtn.addEventListener("click", () => {
-    credits = 1000;
-    updateBalance();
-    alert("Credits have been reset!");
+    credits = 0;
+    currentBet = 0;
+    updateDisplay();
   });
 
-  // Spin Logic
   spinBtn.addEventListener("click", () => {
     if (credits < currentBet || currentBet <= 0) {
-      alert("Insufficient credits or bet not selected.");
+      alert("Not enough credits or no bet selected!");
       return;
     }
 
-    const symbols = ["b1", "b2", "b3", "ch", "s7", "sc"];
+    credits -= currentBet;
+    updateDisplay();
+
     const result = [];
 
-    credits -= currentBet;
-    updateBalance();
-
-    // Spin animation
     reels.forEach((reel, i) => {
       setTimeout(() => {
         const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-        reel.src = `/assets/${symbol}.png`;
+        reel.src = `/assets/${symbol}`;
         result[i] = symbol;
       }, i * 200);
     });
 
     setTimeout(() => {
-      // Check win condition (3 of a kind)
       if (result[0] === result[1] && result[1] === result[2]) {
-        const basePayout = payouts[result[0]] || 1;
-        const winAmount = currentBet * basePayout * (winPercentage / 100);
-        credits += winAmount;
-        updateBalance();
-        console.log(`Win! ${result[0]} x3 pays ${winAmount}`);
-      } else {
-        console.log("No win this round.");
+        const payout = currentBet * (payouts[result[0]] || 1) * (winPercentage / 100);
+        credits += payout;
+        alert(`You won ${payout.toFixed(2)} credits!`);
+        updateDisplay();
       }
     }, 1000);
   });
 
-  updateBalance();
+  function updateDisplay() {
+    document.getElementById("totalCredits").textContent = `Credits: ${credits.toFixed(2)}`;
+  }
+
+  updateDisplay();
 });
