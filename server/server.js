@@ -4,8 +4,8 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
-const { Web3 } = require("web3"); // ✅ Use only this for v4+
-const tokenABI = require("../abi/METToken.json");
+const { Web3 } = require("web3");
+const tokenABI = require("../abi/METToken.json"); // ✅ Keep only this once
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -25,7 +25,7 @@ const logger = winston.createLogger({
 const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
 // Web3 Setup
-const tokenABI = require("../abi/METToken.json"); // ABI path
+const web3 = new Web3(new Web3.providers.HttpProvider(process.env.BSC_RPC_URL));
 const contract = new web3.eth.Contract(tokenABI, process.env.MET_CONTRACT_ADDRESS);
 
 // Globals
