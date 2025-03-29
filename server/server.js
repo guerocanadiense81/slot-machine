@@ -1,331 +1,205 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const Web3 = require('web3');
-
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const Web3 = require("web3");
+const bodyParser = require("body-parser");
+const winston = require("winston");
+const TelegramBot = require("node-telegram-bot-api");
 const app = express();
-const PORT = process.env.PORT || 5000;
-const SECRET_KEY = process.env.JWT_SECRET || 'defaultSecret';
-
-// Initialize Web3 using BSC RPC and add PRIVATE_KEY to the wallet
-const web3 = new Web3(process.env.BSC_RPC_URL);
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
-web3.eth.accounts.wallet.add(account);
-
-// Minimal MET Token ABI (update with your full ABI as needed)
-const metTokenABI = [
-  {
-    "constant": false,
-    "inputs": [
-      { "name": "buyer", "type": "address" },
-      { "name": "amount", "type": "uint256" }
-    ],
-    "name": "purchaseTokens",
-    "outputs": [{ "name": "", "type": "bool" }],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      { "name": "player", "type": "address" },
-      { "name": "amount", "type": "uint256" }
-    ],
-    "name": "loseBet",
-    "outputs": [{ "name": "", "type": "bool" }],
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      { "name": "player", "type": "address" },
-      { "name": "amount", "type": "uint256" }
-    ],
-    "name": "winBet",
-    "outputs": [{ "name": "", "type": "bool" }],
-    "type": "function"
-  }
-];
-const metTokenAddress = process.env.MET_CONTRACT_ADDRESS;
-const metTokenContract = new web3.eth.Contract(metTokenABI, metTokenAddress);
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static("public"));
 
-// Serve static files from project root
-app.use(express.static(path.join(__dirname, '..')));
-
-// Serve HTML files from /views
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
-});
-app.get('/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
-});
-app.get('/paid.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'paid.html'));
-});
-app.get('/about.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'about.html'));
-});
-app.get('/instructions.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'instructions.html'));
-});
-app.get('/contact.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'contact.html'));
-});
-app.get('/admin-login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'admin-login.html'));
-});
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'views', 'admin.html'));
+// Logger
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [new winston.transports.File({ filename: "logs/transactions.log" })],
 });
 
-// In-memory storage for win percentage, transactions, and paused state
-let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
-let transactions = [];
-let paused = false;
+// Telegram Bot
+const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
-// API endpoints for win percentage and pause state (unchanged)
-app.get('/api/get-win-percentage', (req, res) => { res.json({ percentage: winPercentage }); });
-app.post('/api/set-win-percentage', (req, res) => {
-  const { percentage } = req.body;
-  if (typeof percentage === 'number' && percentage >= 0 && percentage <= 100) {
-    winPercentage = percentage;
+// Web3 Setup
+const web3 = new Web3(process.env.BSC_RPC_URL);
+const tokenABI = require("../abi/METToken.json"); // ABI path
+const contract = new web3.eth.Contract(tokenABI, process.env.MET_CONTRACT_ADDRESS);
+
+// Globals
+let paidWinPercent = parseInt(process.env.WIN_PERCENT) || 30;
+let freeWinPercent = 30;
+
+// Endpoint: Get BNB price via smart contract
+app.get("/api/get-bnb-price", async (req, res) => {
+  try {
+    const price = await contract.methods.getLatestBNBPrice().call();
+    res.json({ bnbPrice: parseFloat(price) / 1e8 }); // Chainlink format
+  } catch (err) {
+    logger.error("BNB Price Fetch Error", { error: err.message });
+    res.status(500).json({ error: "Failed to fetch BNB price." });
+  }
+});
+
+// Endpoint: Purchase MET tokens
+app.post("/api/purchase", async (req, res) => {
+  const { from, usdAmount } = req.body;
+  if (!from || !usdAmount || isNaN(usdAmount)) {
+    return res.status(400).json({ error: "Invalid request body." });
+  }
+
+  try {
+    const amount = web3.utils.toWei(usdAmount.toString(), "ether");
+    const tx = contract.methods.purchaseTokens(from, amount);
+    const data = tx.encodeABI();
+    const txObject = {
+      to: process.env.MET_CONTRACT_ADDRESS,
+      data,
+      gas: 300000,
+    };
+
+    const signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
+    logger.info("MET Purchased", { from, usdAmount, hash: receipt.transactionHash });
+
+    res.json({ success: true, txHash: receipt.transactionHash });
+  } catch (error) {
+    logger.error("PurchaseTokens Error", { error: error.message });
+    res.status(500).json({ error: "Token purchase failed." });
+  }
+});
+
+// Endpoint: Cash Out session
+app.post("/api/settle-session", async (req, res) => {
+  const { walletAddress, credits } = req.body;
+  const payout = parseFloat(credits);
+
+  if (!walletAddress || isNaN(payout) || payout <= 0) {
+    return res.status(400).json({ error: "Invalid session data." });
+  }
+
+  const amount = web3.utils.toWei(payout.toString(), "ether");
+
+  try {
+    const tx = contract.methods.winBet(walletAddress, amount);
+    const signed = await web3.eth.accounts.signTransaction(
+      {
+        to: process.env.MET_CONTRACT_ADDRESS,
+        data: tx.encodeABI(),
+        gas: 200000,
+      },
+      process.env.PRIVATE_KEY
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
+
+    logger.info("Session Settled (win)", {
+      wallet: walletAddress,
+      amount: payout,
+      tx: receipt.transactionHash,
+    });
+
+    // Telegram alert if win > threshold (e.g., > 500 MET)
+    if (payout >= 500) {
+      await telegramBot.sendMessage(
+        process.env.TELEGRAM_CHAT_ID,
+        `🎉 BIG WIN!\nUser: ${walletAddress}\nWinnings: ${payout} MET\nTx: https://bscscan.com/tx/${receipt.transactionHash}`
+      );
+    }
+
+    res.json({ success: true, txHash: receipt.transactionHash });
+  } catch (err) {
+    logger.error("WinBet Error", { error: err.message });
+    res.status(500).json({ error: "Cash out failed." });
+  }
+});
+
+// Endpoint: Lose Bet
+app.post("/api/record-loss", async (req, res) => {
+  const { walletAddress, amount } = req.body;
+
+  if (!walletAddress || isNaN(amount)) {
+    return res.status(400).json({ error: "Missing wallet or amount." });
+  }
+
+  const lossAmount = web3.utils.toWei(amount.toString(), "ether");
+
+  try {
+    const tx = contract.methods.loseBet(walletAddress, lossAmount);
+    const signed = await web3.eth.accounts.signTransaction(
+      {
+        to: process.env.MET_CONTRACT_ADDRESS,
+        data: tx.encodeABI(),
+        gas: 200000,
+      },
+      process.env.PRIVATE_KEY
+    );
+    const receipt = await web3.eth.sendSignedTransaction(signed.rawTransaction);
+
+    logger.info("Session Settled (loss)", {
+      wallet: walletAddress,
+      amount,
+      tx: receipt.transactionHash,
+    });
+
+    res.json({ success: true, txHash: receipt.transactionHash });
+  } catch (error) {
+    logger.error("LoseBet Error", { error: error.message });
+    res.status(500).json({ error: "Loss record failed." });
+  }
+});
+
+// Endpoint: Admin login
+app.post("/api/admin-login", (req, res) => {
+  const { username, password } = req.body;
+  if (
+    username === process.env.ADMIN_USERNAME &&
+    password === process.env.ADMIN_PASSWORD
+  ) {
     res.json({ success: true });
   } else {
-    res.status(400).json({ error: 'Invalid percentage value' });
-  }
-});
-app.get('/api/get-paused', (req, res) => { res.json({ paused }); });
-app.post('/api/pause', (req, res) => { paused = true; res.json({ success: true, paused }); });
-app.post('/api/unpause', (req, res) => { paused = false; res.json({ success: true, paused }); });
-
-// Transaction endpoints (unchanged)
-app.post('/api/record-transaction', (req, res) => {
-  const { address, amount, status } = req.body;
-  transactions.push({ address, amount, status, date: new Date() });
-  res.json({ success: true });
-});
-app.get('/api/transactions', (req, res) => { res.json({ transactions }); });
-app.get('/api/download-transactions', (req, res) => {
-  let csvContent = "Address,Amount MET,Status,Date\n";
-  transactions.forEach(tx => { csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date}\n`; });
-  const filePath = path.join(__dirname, 'transactions.csv');
-  fs.writeFileSync(filePath, csvContent);
-  res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
-});
-
-// New endpoint: Update House Wallet
-app.post('/api/update-house-wallet', async (req, res) => {
-  const { newHouseWallet } = req.body;
-  if (!newHouseWallet) {
-    return res.status(400).json({ error: "Missing newHouseWallet address" });
-  }
-  try {
-    const tx = metTokenContract.methods.updateHouseWallet(newHouseWallet);
-    const gas = await tx.estimateGas({ from: account.address });
-    const gasPrice = await web3.eth.getGasPrice();
-    const data = tx.encodeABI();
-    const txData = {
-      from: account.address,
-      to: metTokenAddress,
-      data,
-      gas,
-      gasPrice
-    };
-    const receipt = await web3.eth.sendTransaction(txData);
-    res.json({ success: true, receipt });
-  } catch (error) {
-    console.error("Error updating house wallet:", error);
-    res.status(500).json({ error: "Failed to update house wallet" });
+    res.status(403).json({ error: "Unauthorized" });
   }
 });
 
-// New endpoint: Clear Transaction Logs
-app.post('/api/clear-transactions', (req, res) => {
-  transactions = [];
+// Endpoint: Get both free and paid win %
+app.get("/api/get-win-percentages", (req, res) => {
+  res.json({ free: freeWinPercent, paid: paidWinPercent });
+});
+
+// Endpoint: Admin updates win %
+app.post("/api/update-win-percent", (req, res) => {
+  const { type, percent } = req.body;
+  if (!["free", "paid"].includes(type) || isNaN(percent)) {
+    return res.status(400).json({ error: "Invalid request." });
+  }
+
+  if (type === "free") freeWinPercent = parseInt(percent);
+  else paidWinPercent = parseInt(percent);
+
+  logger.info("Win % Updated", { type, newValue: percent });
   res.json({ success: true });
 });
 
-// New endpoint: Get Metrics (simulate summary statistics)
-app.get('/api/metrics', (req, res) => {
-  let totalBought = 0, totalWins = 0, totalLosses = 0, totalSettled = 0;
-  transactions.forEach(tx => {
-    if (tx.status === "bought") totalBought += parseFloat(tx.amount);
-    if (tx.status === "win") totalWins += parseFloat(tx.amount);
-    if (tx.status === "loss") totalLosses += parseFloat(tx.amount);
-    if (tx.status === "settled") totalSettled += parseFloat(tx.amount);
-  });
-  res.json({ totalBought, totalWins, totalLosses, totalSettled });
-});
-
-// Admin Login Endpoint (unchanged)
-app.post("/admin/login", (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: "2h" });
-    res.json({ success: true, token });
-  } else {
-    res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-});
-
-// Settlement endpoint: Called via sendBeacon or Cash Out
-app.post('/api/settle-session', (req, res) => {
-  let body = '';
-  req.on('data', chunk => { body += chunk.toString(); });
-  req.on('end', async () => {
-    try {
-      const { walletAddress, credits } = JSON.parse(body);
-      console.log(`Settling session for ${walletAddress} with final balance: ${credits}`);
-      
-      // If credits is 0, no settlement needed.
-      if (credits === 0) {
-        console.log("No settlement needed (credits 0).");
-        return res.json({ success: true, message: "No settlement needed (credits 0)" });
-      }
-      
-      // Assume a fee of 2% on winnings (only if credits > 0)
-      const feePercentage = 2;
-      
-      if (credits > 0) {
-        let feeInMET = (credits * feePercentage) / 100;
-        let netWin = credits - feeInMET;
-        const netWinWei = web3.utils.toWei(netWin.toString(), 'ether');
-
-        // Call winBet on the contract
-        const winTx = metTokenContract.methods.winBet(walletAddress, netWinWei);
-        const gasWin = await winTx.estimateGas({ from: account.address });
-        const gasPriceWin = await web3.eth.getGasPrice();
-        const dataWin = winTx.encodeABI();
-        const txDataWin = {
-          from: account.address,
-          to: metTokenAddress,
-          data: dataWin,
-          gas: gasWin,
-          gasPrice: gasPriceWin
-        };
-        const winReceipt = await web3.eth.sendTransaction(txDataWin);
-        console.log("winBet receipt:", winReceipt);
-
-        // Convert fee from MET to BNB
-        const bnbPriceUSD = await getBNBPriceUSD();
-        if (!bnbPriceUSD) {
-          throw new Error("Failed to fetch BNB price for fee conversion");
-        }
-        let feeInBNB = feeInMET / bnbPriceUSD;
-        const feeValue = web3.utils.toWei(feeInBNB.toString(), 'ether');
-        const feeTx = await web3.eth.sendTransaction({
-          from: account.address,
-          to: process.env.BNB_FEES_WALLET_ADDRESS,
-          value: feeValue
-        });
-        console.log("Fee transaction receipt:", feeTx);
-      } else if (credits < 0) {
-        let loss = Math.abs(credits);
-        const lossWei = web3.utils.toWei(loss.toString(), 'ether');
-        const loseTx = metTokenContract.methods.loseBet(walletAddress, lossWei);
-        const gasLose = await loseTx.estimateGas({ from: account.address });
-        const gasPriceLose = await web3.eth.getGasPrice();
-        const dataLose = loseTx.encodeABI();
-        const txDataLose = {
-          from: account.address,
-          to: metTokenAddress,
-          data: dataLose,
-          gas: gasLose,
-          gasPrice: gasPriceLose
-        };
-        const loseReceipt = await web3.eth.sendTransaction(txDataLose);
-        console.log("loseBet receipt:", loseReceipt);
-      } else {
-        console.log("No settlement needed.");
-      }
-      
-      transactions.push({
-        address: walletAddress,
-        amount: credits,
-        status: "settled",
-        date: new Date()
-      });
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error during settlement:", error);
-      res.status(500).json({ error: "Settlement failed" });
-    }
-  });
-});
-
-// Endpoint to fetch BNB price in USD using CoinGecko API
-async function getBNBPriceUSD() {
-  try {
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-      params: { ids: 'binancecoin', vs_currencies: 'usd' }
-    });
-    return response.data.binancecoin.usd;
-  } catch (error) {
-    console.error("Error fetching BNB price:", error);
-    throw error;
-  }
-}
-
-// Endpoint to buy MET tokens using BNB (1 MET = 1 USD conversion)
-app.post('/api/buy-met', async (req, res) => {
-  const { walletAddress, bnbAmount } = req.body;
-  if (!walletAddress || !bnbAmount) {
-    return res.status(400).json({ error: "Missing wallet address or BNB amount" });
-  }
-  try {
-    const bnbPriceUSD = await getBNBPriceUSD();
-    const metAmount = bnbAmount * bnbPriceUSD;  // 1 MET = 1 USD conversion
-    const metAmountWei = web3.utils.toWei(metAmount.toString(), 'ether');
-
-    const tx = metTokenContract.methods.purchaseTokens(walletAddress, metAmountWei);
-    const gas = await tx.estimateGas({ from: account.address });
-    const gasPrice = await web3.eth.getGasPrice();
-    const data = tx.encodeABI();
-    const txData = { from: account.address, to: metTokenAddress, data, gas, gasPrice };
-
-    const receipt = await web3.eth.sendTransaction(txData);
-    console.log("Purchase transaction receipt:", receipt);
-    
-    transactions.push({
-      address: walletAddress,
-      amount: metAmount,
-      status: "bought",
-      date: new Date()
-    });
-    
-    res.json({ success: true, metAmount, txHash: receipt.transactionHash });
-  } catch (error) {
-    console.error("Error processing MET purchase:", error);
-    res.status(500).json({ error: "Failed to process MET purchase" });
-  }
-});
-
-// Contact Form Endpoint (sends message to Telegram)
-app.post('/contact', async (req, res) => {
+// Endpoint: Contact Form
+app.post("/api/contact", (req, res) => {
   const { name, email, message } = req.body;
-  if (!name || !email || !message)
-    return res.status(400).json({ error: "All fields required" });
-  
-  const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const text = `New Contact Submission:\nName: ${name}\nEmail: ${email}\nMessage: ${message}`;
-  
-  try {
-    await axios.post(telegramUrl, { chat_id: process.env.TELEGRAM_CHAT_ID, text });
-    res.json({ success: true, message: "Message sent successfully!" });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to send message" });
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "Missing fields." });
   }
+
+  logger.info("Contact Message", { name, email, message });
+  res.json({ success: true });
 });
 
+// Fallback
+app.get("*", (req, res) => res.send("Slot Machine API Running"));
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
