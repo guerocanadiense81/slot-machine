@@ -3,10 +3,13 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const bodyParser = require("body-parser");
+const winston = require("winston"); // ✅ Add this
 const TelegramBot = require("node-telegram-bot-api");
 const { Web3 } = require("web3");
-const tokenABI = require("../abi/METToken.json"); // ✅ Keep only this once
+const tokenABI = require("../abi/METToken.json");
 
+const app = express(); // ✅ You forgot to declare app
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
