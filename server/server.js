@@ -7,7 +7,7 @@ const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
 const winston = require("winston");
 const bodyParser = require("body-parser");
-const { Web3 } = require("web3");
+const Web3 = require('web3');
 const tokenABI = require("../abi/METToken.json");
 
 const app = express();
@@ -48,7 +48,7 @@ const logger = winston.createLogger({
 const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
 // ✅ Web3 Setup
-const web3 = new Web3(process.env.BSC_RPC_URL);
+const web3 = new Web3(new Web3.providers.HttpProvider(process.env.BSC_RPC_URL));
 const contract = new web3.eth.Contract(tokenABI, process.env.MET_CONTRACT_ADDRESS);
 
 // ✅ Globals
