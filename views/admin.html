@@ -1,9 +1,7 @@
-<!-- /views/admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
@@ -13,43 +11,32 @@
     <nav>
       <a href="/index.html">Free Game</a>
       <a href="/paid.html">Paid Game</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">Instructions</a>
-      <a href="#" id="logoutBtn">Logout</a>
+      <button id="logoutBtn">Logout</button>
     </nav>
   </header>
 
-  <section>
-    <h3>🎯 Win Percentages</h3>
-    <label>Free Game Win %:</label>
-    <input type="number" id="freeWinPercent" min="0" max="100" />
-    <button id="updateFreeWinBtn">Update Free</button>
-    <br><br>
-    <label>Paid Game Win %:</label>
-    <input type="number" id="paidWinPercent" min="0" max="100" />
-    <button id="updatePaidWinBtn">Update Paid</button>
+  <main>
+    <section>
+      <h2>Win % Settings</h2>
+      <label>Paid Win %: <input type="number" id="paidWinPercent" /></label><br />
+      <label>Free Win %: <input type="number" id="freeWinPercent" /></label><br />
+      <button id="updateWinBtn">Update</button>
+    </section>
 
-    <h3>🏦 House Wallet</h3>
-    <input type="text" id="newHouseWallet" placeholder="0x..." />
-    <button id="updateHouseWalletBtn">Update Wallet</button>
+    <section id="transactionLog">
+      <h2>Transaction Logs</h2>
+      <!-- Logs will be injected here -->
+    </section>
+  </main>
 
-    <h3>🔒 Game Controls</h3>
-    <button id="pauseGameBtn">Pause Game</button>
-    <button id="unpauseGameBtn">Unpause Game</button>
-    <div id="pausedStatus">Loading status...</div>
-
-    <h3>📊 Metrics</h3>
-    <div id="metrics">
-      <p><strong>Total MET Sent:</strong> <span id="metSent">0</span></p>
-      <p><strong>Total MET Received:</strong> <span id="metReceived">0</span></p>
-      <p><strong>Total BNB Fees:</strong> <span id="bnbFees">0</span></p>
-    </div>
-
-    <h3>📄 Transactions</h3>
-    <button id="downloadCSVBtn">Download CSV</button>
-    <button id="clearLogsBtn">Clear Logs</button>
-    <div id="transactionLog"></div>
-  </section>
+  <footer>
+    <p>&copy; 2025 Slot Machine | <a href="#">Privacy Policy</a> | <a href="#">Terms</a></p>
+    <p>
+      <a href="https://twitter.com" target="_blank">Twitter</a> |
+      <a href="https://github.com" target="_blank">GitHub</a> |
+      <a href="mailto:support@metmachine.com">Contact</a>
+    </p>
+  </footer>
 
   <script src="/js/admin.js"></script>
 </body>
