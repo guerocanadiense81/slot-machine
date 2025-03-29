@@ -1,3 +1,9 @@
+const API_URL = 'https://slot-machine-a08c.onrender.com';
+
+document.addEventListener("DOMContentLoaded", function () {
+  // rest of the code
+});
+
 document.addEventListener("DOMContentLoaded", function () {
   let credits = 1000; // Starting credits for free game
   let currentBet = 0;
