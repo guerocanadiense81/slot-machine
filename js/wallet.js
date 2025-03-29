@@ -1,15 +1,18 @@
-document.addEventListener("DOMContentLoaded", function () {
-  async function connectWallet() {
-    if (window.ethereum) {
+window.addEventListener("load", async () => {
+  if (typeof window.ethereum !== "undefined") {
+    const connectBtn = document.getElementById("connectWallet");
+
+    connectBtn.addEventListener("click", async () => {
       try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        document.getElementById("walletAddress").textContent = `Wallet: ${accounts[0]}`;
-      } catch (error) {
-        console.error("Wallet connection failed", error);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const web3 = new Web3(window.ethereum);
+        const accounts = await web3.eth.getAccounts();
+        document.getElementById("walletAddress").innerText = `Wallet: ${accounts[0]}`;
+      } catch (err) {
+        console.error("Wallet connection failed", err);
       }
-    } else {
-      alert("Please install MetaMask.");
-    }
+    });
+  } else {
+    alert("Please install MetaMask!");
   }
-  document.getElementById("connectWallet").addEventListener("click", connectWallet);
 });
