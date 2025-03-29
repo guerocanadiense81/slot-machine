@@ -1,4 +1,3 @@
-<!-- /views/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,38 +11,41 @@
     <a href="/views/index.html">Free Game</a>
     <a href="/views/paid.html">Paid Game</a>
     <a href="/views/about.html">About</a>
-    <a href="/views/instructions.html">Instructions</a>
+    <a href="/views/instructions.html">How to Play</a>
     <a href="/views/contact.html">Contact</a>
+    <a href="/views/admin-login.html">Admin</a>
   </nav>
 
-  <h1>🎰 Free MET Slot Machine</h1>
+  <h1>🎰 Free Slot Machine</h1>
 
   <div id="slot-machine">
     <div class="reel-container">
-      <div class="reel"><img src="/assets/b1.png" alt="reel" /></div>
-      <div class="reel"><img src="/assets/b2.png" alt="reel" /></div>
-      <div class="reel"><img src="/assets/b3.png" alt="reel" /></div>
+      <div class="reel"><img src="/assets/b1.png" alt="Reel" /></div>
+      <div class="reel"><img src="/assets/b2.png" alt="Reel" /></div>
+      <div class="reel"><img src="/assets/b3.png" alt="Reel" /></div>
     </div>
   </div>
 
   <div class="points-tab">
-    <div class="point">Total Credits: <span id="totalCredits">1000</span></div>
+    <div class="point">Credits: <span id="totalCredits">1000</span> MET</div>
+    <div class="point">Win %: <span id="freeWinDisplay">--</span>%</div>
   </div>
 
   <div class="controls">
-    <button class="bet"><img src="/assets/1go.png" alt="1 Credit" /></button>
-    <button class="bet"><img src="/assets/5go.png" alt="5 Credits" /></button>
-    <button class="bet"><img src="/assets/10go.png" alt="10 Credits" /></button>
-    <button class="bet"><img src="/assets/50go.png" alt="50 Credits" /></button>
-    <button class="bet"><img src="/assets/100go.png" alt="100 Credits" /></button>
-    <button class="bet"><img src="/assets/1000go.png" alt="1000 Credits" /></button>
+    <button class="bet"><img src="/assets/1go.png" alt="1 MET" /></button>
+    <button class="bet"><img src="/assets/5go.png" alt="5 MET" /></button>
+    <button class="bet"><img src="/assets/10go.png" alt="10 MET" /></button>
+    <button class="bet"><img src="/assets/50go.png" alt="50 MET" /></button>
+    <button class="bet"><img src="/assets/100go.png" alt="100 MET" /></button>
+    <button class="bet"><img src="/assets/1000go.png" alt="1000 MET" /></button>
   </div>
 
   <div class="bottom-controls">
-    <button id="spinBtn" class="spinBtn">SPIN</button>
+    <button id="spinBtn" class="spinBtn">Spin 🎰</button>
     <div id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="/js/game.js"></script>
 </body>
 </html>
