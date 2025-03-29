@@ -1,40 +1,89 @@
-<!-- /views/instructions.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>How to Play</title>
+  <title>How to Play & Connect Wallet</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <header>
-    <h1>How to Play</h1>
     <nav>
-      <a href="/views/index.html">Free Game</a>
-      <a href="/views/paid.html">Paid Game</a>
-      <a href="/views/about.html">About</a>
-      <a href="/views/contact.html">Contact</a>
-      <a href="/views/admin-login.html">Admin</a>
+      <a href="/index.html">Free Game</a>
+      <a href="/paid.html">Paid Game</a>
+      <a href="/about.html">About</a>
+      <a href="/instructions.html">How to Play</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/admin-login.html">Admin</a>
     </nav>
   </header>
 
-  <section>
-    <h3>🎰 Free Version</h3>
+  <h1>🧠 How to Play & Connect Wallet</h1>
+
+  <div class="instructions">
+    <h2>🔗 Step 1: Connect MetaMask Wallet</h2>
+    <ol>
+      <li>Install the <strong>MetaMask</strong> browser extension from <a href="https://metamask.io" target="_blank">metamask.io</a>.</li>
+      <li>Create or import a wallet using a secure seed phrase.</li>
+      <li>Once MetaMask is set up, click the <strong>Connect Wallet</strong> button in the game.</li>
+    </ol>
+
+    <h2>🛠 Step 2: Add BSC Network to MetaMask</h2>
+    <p>Open MetaMask and click the network dropdown. Select <strong>"Add Network"</strong> and enter:</p>
     <ul>
-      <li>Click a chip to choose your MET bet amount.</li>
-      <li>Click <strong>Spin</strong> to roll the reels.</li>
-      <li>If all three symbols match, you win based on payout table.</li>
-      <li>Reset your balance anytime using the reset button.</li>
+      <li><strong>Network Name:</strong> Binance Smart Chain</li>
+      <li><strong>RPC URL:</strong> https://bsc-dataseed.binance.org/</li>
+      <li><strong>Chain ID:</strong> 56</li>
+      <li><strong>Currency Symbol:</strong> BNB</li>
+      <li><strong>Block Explorer URL:</strong> https://bscscan.com</li>
     </ul>
 
-    <h3>💰 Paid Version</h3>
+    <h2>💰 Step 3: Add MET Token to MetaMask</h2>
+    <p>Still inside MetaMask, click <strong>"Import Tokens"</strong> and paste the following:</p>
     <ul>
-      <li>Connect your MetaMask wallet.</li>
-      <li>Buy MET tokens using BNB at 1 MET = $1 USD equivalent.</li>
-      <li>Play using your MET balance. Winnings are on-chain!</li>
-      <li>Click <strong>Cash Out</strong> to settle session.</li>
+      <li><strong>Token Contract Address:</strong> <code>0xb80b92Be7402E1e2D3189fff261D672D8104b322</code></li>
+      <li><strong>Token Symbol:</strong> MET</li>
+      <li><strong>Decimals:</strong> 18</li>
     </ul>
-  </section>
+    <p>You will now see your MET balance in your wallet.</p>
+
+    <h2>🪙 Step 4: Buy MET Tokens Using BNB</h2>
+    <p>Go to the <a href="/paid.html"><strong>Paid Game</strong></a> and scroll to the <strong>"Buy MET"</strong> section.</p>
+    <ol>
+      <li>Enter the amount in <strong>USD or BNB</strong>.</li>
+      <li>The system will calculate and display:
+        <ul>
+          <li>📈 MET Tokens you will receive (1 MET = 1 USD)</li>
+          <li>💱 Equivalent BNB required based on real-time rates</li>
+          <li>💵 USD equivalent</li>
+        </ul>
+      </li>
+      <li>Click <strong>Buy Now</strong> and approve the transaction in MetaMask.</li>
+      <li>You’ll receive MET tokens after the BNB is sent to the system wallet.</li>
+    </ol>
+
+    <h2>⚠️ Important Notes</h2>
+    <ul>
+      <li>You must hold some <strong>BNB</strong> to cover gas fees on the BSC network.</li>
+      <li><strong>MET tokens</strong> are used to play the paid slot machine.</li>
+      <li>Paid game will <strong>deduct MET</strong> for each spin depending on your bet.</li>
+    </ul>
+
+    <h2>💸 Cashing Out Winnings</h2>
+    <ul>
+      <li>Click the <strong>"Cash Out"</strong> button after playing.</li>
+      <li>The system will send winnings (in MET) to your wallet.</li>
+      <li>A small 2% fee may be deducted and sent to the system for sustainability.</li>
+      <li>The backend will process win/loss transactions using smart contracts.</li>
+    </ul>
+
+    <h2>✅ Summary</h2>
+    <ul>
+      <li>🎰 Free Game = off-chain credits</li>
+      <li>💵 Paid Game = real MET tokens & on-chain winnings</li>
+      <li>💳 1 MET = 1 USD (in BNB, via CoinGecko price feed)</li>
+      <li>💸 Cash outs & payouts handled on-chain using smart contract</li>
+    </ul>
+  </div>
 </body>
 </html>
