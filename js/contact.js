@@ -1,8 +1,7 @@
-// /js/contact.js
-document.addEventListener("DOMContentLoaded", () => {
-  const API_URL = 'https://slot-machine-a08c.onrender.com';
-  const contactForm = document.getElementById("contactForm");
+const API_URL = 'https://slot-machine-a08c.onrender.com';
 
+document.addEventListener("DOMContentLoaded", () => {
+  const contactForm = document.getElementById("contactForm");
   if (!contactForm) return;
 
   contactForm.addEventListener("submit", async (e) => {
@@ -17,25 +16,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const payload = { name, email, message };
-
     try {
-      const response = await fetch(`${API_URL}/api/contact`, {
+      const res = await fetch(`${API_URL}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ name, email, message }),
       });
 
-      const result = await response.json();
+      const result = await res.json();
       if (result.success) {
-        alert("Message sent! We'll get back to you shortly.");
+        alert("Message sent!");
         contactForm.reset();
       } else {
-        alert("Something went wrong: " + result.error);
+        alert("Error: " + result.error);
       }
     } catch (err) {
-      console.error("Error sending contact form:", err);
-      alert("Network error. Please try again later.");
+      console.error("Error:", err);
+      alert("Failed to send. Try again.");
     }
   });
 });
