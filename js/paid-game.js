@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const connectWalletBtn = document.getElementById("connectWallet");
   const cashOutBtn = document.getElementById("cashOutBtn");
 
-  const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322"; // Upgradeable contract
+  const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
   const tokenABI = [
     {
       "constant": true,
@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   fetch(`${API_URL}/api/get-win-percentages`)
     .then(res => res.json())
-    .then(data => winPercentage = data.paid || 30);
+    .then(data => winPercentage = data.paid);
 
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", async () => {
@@ -105,18 +105,20 @@ document.addEventListener("DOMContentLoaded", function () {
         credits += winAmount;
         updateBalance();
 
+        const data = { walletAddress: player, credits: winAmount };
         await fetch(`${API_URL}/api/settle-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ walletAddress: player, credits: winAmount })
+          body: JSON.stringify(data),
         });
       } else {
         await fetch(`${API_URL}/api/record-loss`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ walletAddress: player, amount: currentBet })
+          body: JSON.stringify({ walletAddress: player, amount: currentBet }),
         });
       }
+
       fetchMETBalance();
     }, 1000);
   }
@@ -146,27 +148,40 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- Buy MET Feature ---
+  // BUY SECTION
   const usdInput = document.getElementById("usdAmount");
+  const bnbInput = document.getElementById("bnbAmount");
   const calculateBtn = document.getElementById("calculateMetBtn");
   const buyBtn = document.getElementById("buyNowBtn");
   const outputLabel = document.getElementById("metEstimate");
 
+  let latestBNBPrice = 0;
+
   calculateBtn.addEventListener("click", async () => {
-    const usdAmount = parseFloat(usdInput.value);
-    if (!usdAmount || usdAmount <= 0) {
-      alert("Enter valid USD amount.");
-      return;
-    }
+    const usdVal = parseFloat(usdInput.value);
+    const bnbVal = parseFloat(bnbInput.value);
 
     const res = await fetch(`${API_URL}/api/get-bnb-price`);
     const data = await res.json();
-    const bnbPrice = data.bnbPrice;
-    const requiredBNB = usdAmount / bnbPrice;
+    latestBNBPrice = data.bnbPrice;
+
+    let usdAmount, bnbAmount;
+
+    if (usdVal > 0) {
+      usdAmount = usdVal;
+      bnbAmount = usdVal / latestBNBPrice;
+    } else if (bnbVal > 0) {
+      bnbAmount = bnbVal;
+      usdAmount = bnbVal * latestBNBPrice;
+    } else {
+      alert("Please enter a valid USD or BNB value.");
+      return;
+    }
+
     const metTokens = usdAmount;
 
-    outputLabel.textContent = `Buy ${metTokens} MET = ${requiredBNB.toFixed(4)} BNB ($${usdAmount})`;
-    buyBtn.setAttribute("data-bnb", requiredBNB);
+    outputLabel.textContent = `You'll get ${metTokens} MET\n= ${bnbAmount.toFixed(4)} BNB\n= $${usdAmount.toFixed(2)}`;
+    buyBtn.setAttribute("data-bnb", bnbAmount);
     buyBtn.setAttribute("data-met", metTokens);
   });
 
@@ -174,27 +189,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const accounts = await web3.eth.getAccounts();
     const buyer = accounts[0];
     const bnbAmount = buyBtn.getAttribute("data-bnb");
-    const metAmount = buyBtn.getAttribute("data-met");
 
-    try {
-      await web3.eth.sendTransaction({
-        from: buyer,
-        to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6",
-        value: web3.utils.toWei(bnbAmount, "ether")
+    web3.eth.sendTransaction({
+      from: buyer,
+      to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6",
+      value: web3.utils.toWei(bnbAmount, "ether")
+    })
+      .then(() => {
+        alert("Transaction sent! You’ll receive MET soon.");
+      })
+      .catch(err => {
+        console.error("Purchase failed", err);
+        alert("Transaction failed.");
       });
-
-      // Notify backend of purchase
-      await fetch(`${API_URL}/api/purchase`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: buyer, usdAmount: metAmount })
-      });
-
-      alert("Transaction sent! You'll receive your MET soon.");
-    } catch (err) {
-      console.error("Purchase failed", err);
-      alert("Transaction failed.");
-    }
   });
 
   updateBalance();
