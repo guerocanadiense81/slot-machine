@@ -220,3 +220,8 @@ app.use((req, res) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Slot Machine API running on port ${PORT}`));
+
+app.use((req, res) => {
+  res.status(404).send("404 - Page Not Found");
+});
+
