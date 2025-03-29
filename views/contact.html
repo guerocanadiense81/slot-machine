@@ -1,4 +1,3 @@
-<!-- /views/contact.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,52 +7,23 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>Contact Us</h1>
-    <nav>
-      <a href="/index.html">Free Game</a>
-      <a href="/paid.html">Paid Game</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">Instructions</a>
-      <a href="/admin-login.html">Admin</a>
-    </nav>
-  </header>
+  <nav>
+    <a href="/index.html">🎰 Free Game</a>
+    <a href="/paid.html">💸 Paid Game</a>
+    <a href="/instructions.html">📜 Instructions</a>
+    <a href="/about.html">📘 About</a>
+    <a href="/contact.html">✉️ Contact</a>
+  </nav>
 
-  <section>
-    <form id="contactForm">
-      <input type="text" id="name" placeholder="Your Name" required /><br/>
-      <input type="email" id="email" placeholder="Your Email" required /><br/>
-      <textarea id="message" placeholder="Your Message" rows="5" cols="40" required></textarea><br/>
-      <button type="submit">Send Message</button>
-    </form>
-    <div id="contactStatus" style="margin-top: 15px;"></div>
-  </section>
+  <h1>Contact Us</h1>
 
-  <script>
-    document.getElementById("contactForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
-      const message = document.getElementById("message").value;
+  <form id="contactForm" style="max-width: 400px; margin: 0 auto;">
+    <input type="text" id="nameInput" placeholder="Your Name" required /><br />
+    <input type="email" id="emailInput" placeholder="Your Email" required /><br />
+    <textarea id="messageInput" placeholder="Your Message" rows="6" required style="width: 100%; padding: 10px; margin-top: 10px;"></textarea><br />
+    <button type="submit">Send Message</button>
+  </form>
 
-      try {
-        const res = await fetch("https://slot-machine-a08c.onrender.com/api/contact", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, message })
-        });
-        const result = await res.json();
-        if (result.success) {
-          document.getElementById("contactStatus").innerText = "Message sent!";
-          document.getElementById("contactForm").reset();
-        } else {
-          document.getElementById("contactStatus").innerText = "Failed to send.";
-        }
-      } catch (err) {
-        console.error("Error sending message:", err);
-        document.getElementById("contactStatus").innerText = "Server error.";
-      }
-    });
-  </script>
+  <script src="/js/contact.js"></script>
 </body>
 </html>
