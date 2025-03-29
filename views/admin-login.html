@@ -1,41 +1,56 @@
+<!-- /views/admin-login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login</title>
-  <link rel="stylesheet" href="/css/admin.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login - MET Slot Machine</title>
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <h1>Admin Login</h1>
-  <form id="adminLoginForm">
-    <label for="username">Username:</label>
-    <input type="text" id="username" required>
-    <br>
-    <label for="password">Password:</label>
-    <input type="password" id="password" required>
-    <br>
-    <button type="submit">Login</button>
-  </form>
-  <p id="errorMessage" style="color:red;"></p>
+  <header>
+    <h1>Admin Login</h1>
+    <nav>
+      <a href="/views/index.html">Free Game</a>
+      <a href="/views/paid.html">Paid Game</a>
+      <a href="/views/about.html">About</a>
+      <a href="/views/instructions.html">Instructions</a>
+      <a href="/views/contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <section>
+    <form id="adminLoginForm">
+      <input type="text" id="adminUsername" placeholder="Username" required />
+      <br />
+      <input type="password" id="adminPassword" placeholder="Password" required />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+    <div id="loginError" style="color: red; margin-top: 10px;"></div>
+  </section>
+
   <script>
-    document.getElementById("adminLoginForm").addEventListener("submit", async function(event) {
-      event.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-      
-      const response = await fetch("/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        localStorage.setItem("adminToken", data.token);
-        window.location.href = "/admin.html";
-      } else {
-        document.getElementById("errorMessage").textContent = "Invalid credentials";
+    document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("adminUsername").value;
+      const password = document.getElementById("adminPassword").value;
+      try {
+        const res = await fetch("https://slot-machine-a08c.onrender.com/api/admin-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem("adminToken", data.token);
+          window.location.href = "/views/admin.html";
+        } else {
+          document.getElementById("loginError").innerText = "Invalid credentials.";
+        }
+      } catch (err) {
+        console.error("Login error:", err);
+        document.getElementById("loginError").innerText = "Server error.";
       }
     });
   </script>
