@@ -11,7 +11,7 @@ const { Web3 } = require("web3");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const tokenABI = require("../abi/METToken.json"); // Make sure this path is correct
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.BSC_RPC_URL));
