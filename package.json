@@ -1,19 +1,34 @@
 {
-  "name": "slot-machine-server",
+  "name": "slot-machine",
   "version": "1.0.0",
-  "description": "Backend server for MET Slot Machine Game",
-  "main": "server.js",
+  "description": "Slot Machine Game DApp with MET token integration",
+  "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
   },
+  "keywords": [
+    "slot-machine",
+    "dapp",
+    "blockchain",
+    "met-token",
+    "bnb",
+    "express"
+  ],
+  "author": "guerocanadiense81",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1",
-    "web3": "^1.10.0",
-    "axios": "^1.6.7",
-    "winston": "^3.9.0",
-    "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.61.0",
+    "web3": "^4.3.2",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
