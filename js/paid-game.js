@@ -1,7 +1,6 @@
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
 document.addEventListener("DOMContentLoaded", function () {
- 
   let credits = 0;
   let currentBet = 0;
   let winPercentage = 30;
@@ -13,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const connectWalletBtn = document.getElementById("connectWallet");
   const cashOutBtn = document.getElementById("cashOutBtn");
 
-  const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322"; // New upgradeable contract
+  const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322"; // Upgradeable contract
   const tokenABI = [
     {
       "constant": true,
@@ -48,9 +47,9 @@ document.addEventListener("DOMContentLoaded", function () {
     balanceDisplay.textContent = `${credits.toFixed(2)} MET`;
   }
 
-  fetch(`${API_URL}/api/get-win-percentage`)
+  fetch(`${API_URL}/api/get-win-percentages`)
     .then(res => res.json())
-    .then(data => winPercentage = data.percentage);
+    .then(data => winPercentage = data.paid || 30);
 
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", async () => {
@@ -106,20 +105,19 @@ document.addEventListener("DOMContentLoaded", function () {
         credits += winAmount;
         updateBalance();
 
-        const data = { player, amount: winAmount };
-        await fetch(`${API_URL}/api/win`, {
+        await fetch(`${API_URL}/api/settle-session`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify({ walletAddress: player, credits: winAmount })
         });
       } else {
-        await fetch(`${API_URL}/api/lose`, {
+        await fetch(`${API_URL}/api/record-loss`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ player, amount: currentBet }),
+          body: JSON.stringify({ walletAddress: player, amount: currentBet })
         });
       }
-      fetchMETBalance(); // Refresh balance
+      fetchMETBalance();
     }, 1000);
   }
 
@@ -148,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- Buy Now Button with conversion ---
+  // --- Buy MET Feature ---
   const usdInput = document.getElementById("usdAmount");
   const calculateBtn = document.getElementById("calculateMetBtn");
   const buyBtn = document.getElementById("buyNowBtn");
@@ -176,19 +174,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const accounts = await web3.eth.getAccounts();
     const buyer = accounts[0];
     const bnbAmount = buyBtn.getAttribute("data-bnb");
+    const metAmount = buyBtn.getAttribute("data-met");
 
-    web3.eth.sendTransaction({
-      from: buyer,
-      to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6", // MET wallet address
-      value: web3.utils.toWei(bnbAmount, "ether")
-    })
-      .then(() => {
-        alert("Transaction sent! You’ll receive MET soon.");
-      })
-      .catch(err => {
-        console.error("Purchase failed", err);
-        alert("Transaction failed.");
+    try {
+      await web3.eth.sendTransaction({
+        from: buyer,
+        to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6",
+        value: web3.utils.toWei(bnbAmount, "ether")
       });
+
+      // Notify backend of purchase
+      await fetch(`${API_URL}/api/purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from: buyer, usdAmount: metAmount })
+      });
+
+      alert("Transaction sent! You'll receive your MET soon.");
+    } catch (err) {
+      console.error("Purchase failed", err);
+      alert("Transaction failed.");
+    }
   });
 
   updateBalance();
