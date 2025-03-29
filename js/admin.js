@@ -1,8 +1,6 @@
-// /js/admin.js
-document.addEventListener("DOMContentLoaded", function () {
-  const API_URL = 'https://slot-machine-a08c.onrender.com';
+const API_URL = 'https://slot-machine-a08c.onrender.com';
 
-  // Load current win percentages
+document.addEventListener("DOMContentLoaded", function () {
   fetch(`${API_URL}/api/get-win-percentages`)
     .then(res => res.json())
     .then(data => {
@@ -10,15 +8,20 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("freeWinPercent").value = data.free;
     });
 
-  // Update win percentage
   document.getElementById("updateWinBtn").addEventListener("click", () => {
     const paid = parseInt(document.getElementById("paidWinPercent").value);
     const free = parseInt(document.getElementById("freeWinPercent").value);
 
-    fetch(`${API_URL}/api/update-win-percentages`, {
+    fetch(`${API_URL}/api/update-win-percent`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paid, free }),
+      body: JSON.stringify({ type: "paid", percent: paid }),
+    });
+
+    fetch(`${API_URL}/api/update-win-percent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "free", percent: free }),
     })
       .then(res => res.json())
       .then(data => {
@@ -27,3 +30,4 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   });
 });
+​
