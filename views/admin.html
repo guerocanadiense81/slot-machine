@@ -1,60 +1,56 @@
+<!-- /views/admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/css/admin.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <header>
     <h1>Admin Dashboard</h1>
     <nav>
-      <a href="/">Home</a>
-      <button id="logoutBtn">Logout</button>
+      <a href="/views/index.html">Free Game</a>
+      <a href="/views/paid.html">Paid Game</a>
+      <a href="/views/about.html">About</a>
+      <a href="/views/instructions.html">Instructions</a>
+      <a href="#" id="logoutBtn">Logout</a>
     </nav>
   </header>
-  <main>
-    <!-- Win Percentage Section -->
-    <section id="winPercentageSection">
-      <h2>Set Win Percentage</h2>
-      <input type="number" id="winPercentageInput" min="0" max="100" placeholder="Enter win %" />
-      <button onclick="updateWinPercentage()">Update</button>
-    </section>
 
-    <!-- Pause/Unpause Section -->
-    <section id="pauseSection">
-      <h2>Game Control</h2>
-      <p>Status: <span id="pausedStatus">Unknown</span></p>
-      <button onclick="pauseGame()">Pause Game</button>
-      <button onclick="unpauseGame()">Unpause Game</button>
-    </section>
+  <section>
+    <h3>🎯 Win Percentages</h3>
+    <label>Free Game Win %:</label>
+    <input type="number" id="freeWinPercent" min="0" max="100" />
+    <button id="updateFreeWinBtn">Update Free</button>
+    <br><br>
+    <label>Paid Game Win %:</label>
+    <input type="number" id="paidWinPercent" min="0" max="100" />
+    <button id="updatePaidWinBtn">Update Paid</button>
 
-    <!-- House Wallet Management Section -->
-    <section id="houseWalletSection">
-      <h2>Update House Wallet</h2>
-      <input type="text" id="newHouseWallet" placeholder="Enter new house wallet address" />
-      <button onclick="updateHouseWallet()">Update</button>
-    </section>
+    <h3>🏦 House Wallet</h3>
+    <input type="text" id="newHouseWallet" placeholder="0x..." />
+    <button id="updateHouseWalletBtn">Update Wallet</button>
 
-    <!-- Metrics Section -->
-    <section id="metricsSection">
-      <h2>Metrics</h2>
-      <div id="metrics">
-        <!-- Summary stats will be inserted here -->
-      </div>
-    </section>
+    <h3>🔒 Game Controls</h3>
+    <button id="pauseGameBtn">Pause Game</button>
+    <button id="unpauseGameBtn">Unpause Game</button>
+    <div id="pausedStatus">Loading status...</div>
 
-    <!-- Transaction Log Section -->
-    <section id="transactionSection">
-      <h2>Transaction History</h2>
-      <div id="transactionLog">
-        <!-- Transaction log will be displayed here -->
-      </div>
-      <button onclick="downloadCSV()">Download CSV</button>
-      <button id="clearLogsBtn" onclick="clearTransactions()">Clear Logs</button>
-    </section>
-  </main>
+    <h3>📊 Metrics</h3>
+    <div id="metrics">
+      <p><strong>Total MET Sent:</strong> <span id="metSent">0</span></p>
+      <p><strong>Total MET Received:</strong> <span id="metReceived">0</span></p>
+      <p><strong>Total BNB Fees:</strong> <span id="bnbFees">0</span></p>
+    </div>
+
+    <h3>📄 Transactions</h3>
+    <button id="downloadCSVBtn">Download CSV</button>
+    <button id="clearLogsBtn">Clear Logs</button>
+    <div id="transactionLog"></div>
+  </section>
+
   <script src="/js/admin.js"></script>
 </body>
 </html>
