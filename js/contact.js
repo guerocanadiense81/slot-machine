@@ -1,5 +1,6 @@
 // /js/contact.js
 document.addEventListener("DOMContentLoaded", () => {
+  const API_URL = 'https://slot-machine-a08c.onrender.com';
   const contactForm = document.getElementById("contactForm");
 
   if (!contactForm) return;
@@ -19,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = { name, email, message };
 
     try {
-      const response = await fetch("https://slot-machine-a08c.onrender.com/api/contact", {
+      const response = await fetch(`${API_URL}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
