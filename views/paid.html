@@ -1,54 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paid Slot Game</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <nav>
-    <a href="/index.html">Free Game</a>
-    <a href="/paid.html">Paid Game</a>
-    <a href="/about.html">About</a>
-    <a href="/instructions.html">How to Play</a>
-    <a href="/contact.html">Contact</a>
-    <a href="/admin-login.html">Admin</a>
-  </nav>
+  <header>
+    <nav>
+      <a href="/index.html">Free Game</a>
+      <a href="/paid.html">Paid Game</a>
+      <a href="/about.html">About</a>
+      <a href="/instructions.html">How to Play</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/admin-login.html">Admin</a>
+    </nav>
+  </header>
 
-  <h1>💰 Paid Slot Machine</h1>
-  <button id="connectWallet">Connect Wallet</button>
-  <div id="walletAddress"></div>
-  <div id="metBalance">0 MET</div>
+  <h1>🎰 Paid Slot Machine</h1>
 
-  <div id="slot-machine">
-    <div class="reel-container">
-      <div class="reel"><img src="/assets/b1.png" alt="Reel" /></div>
-      <div class="reel"><img src="/assets/b2.png" alt="Reel" /></div>
-      <div class="reel"><img src="/assets/b3.png" alt="Reel" /></div>
-    </div>
+  <div class="points-tab">
+    <div class="point">Balance: <span id="metBalance">0</span> MET</div>
+    <div class="point"><button id="connectWallet">Connect Wallet</button></div>
   </div>
 
+  <section id="slot-machine">
+    <div class="reel-container">
+      <div class="reel"><img src="/assets/b1.png" alt="reel" /></div>
+      <div class="reel"><img src="/assets/b2.png" alt="reel" /></div>
+      <div class="reel"><img src="/assets/b3.png" alt="reel" /></div>
+    </div>
+  </section>
+
   <div class="controls">
-    <button class="bet"><img src="/assets/1go.png" alt="1" /></button>
-    <button class="bet"><img src="/assets/5go.png" alt="5" /></button>
-    <button class="bet"><img src="/assets/10go.png" alt="10" /></button>
-    <button class="bet"><img src="/assets/50go.png" alt="50" /></button>
-    <button class="bet"><img src="/assets/100go.png" alt="100" /></button>
-    <button class="bet"><img src="/assets/1000go.png" alt="1000" /></button>
+    <button class="bet"><img src="/assets/1go.png" alt="1 MET" /></button>
+    <button class="bet"><img src="/assets/5go.png" alt="5 MET" /></button>
+    <button class="bet"><img src="/assets/10go.png" alt="10 MET" /></button>
+    <button class="bet"><img src="/assets/50go.png" alt="50 MET" /></button>
+    <button class="bet"><img src="/assets/100go.png" alt="100 MET" /></button>
+    <button class="bet"><img src="/assets/1000go.png" alt="1000 MET" /></button>
   </div>
 
   <div class="bottom-controls">
-    <button id="spinBtn" class="spinBtn">Spin 🎰</button>
-    <div id="cashOutBtn">💵 Cash Out</div>
+    <button id="spinBtn" class="spinBtn" disabled>🎯 SPIN</button>
+    <div id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></div>
+    <button id="cashOutBtn" class="spinBtn">💵 CASH OUT</button>
   </div>
 
-  <div id="buyMetSection">
-    <h3>Buy MET Tokens</h3>
-    <input type="number" id="usdAmount" placeholder="USD Amount" />
+  <div id="totalCredits">Credits: 0</div>
+
+  <!-- Buy MET Section -->
+  <section id="buyMetSection">
+    <h2>🪙 Buy MET Tokens</h2>
+
+    <p>Enter either <strong>USD</strong> or <strong>BNB</strong>:</p>
+    <input type="number" id="usdAmount" placeholder="USD" />
+    <input type="number" id="bnbAmount" placeholder="BNB" />
+
+    <br /><br />
     <button id="calculateMetBtn">Calculate</button>
-    <p id="metEstimate"></p>
+    <p id="metEstimate">Estimated: —</p>
+
     <button id="buyNowBtn">Buy Now</button>
-  </div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="/js/wallet.js"></script>
