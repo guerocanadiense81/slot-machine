@@ -1,34 +1,33 @@
 document.addEventListener("DOMContentLoaded", function () {
-  let credits = 50;
+  let credits = 1000; // Starting credits for free game
   let currentBet = 0;
-  let winPercentage = 30; // Default win percentage
+  let winPercentage = 30; // Default admin win percentage for free version
 
-  const creditDisplay = document.getElementById("totalCredits");
-  const spinButton = document.getElementById("spinBtn");
-  const resetButton = document.getElementById("resetBtn");
+  const balanceDisplay = document.getElementById("creditsDisplay");
+  const spinBtn = document.getElementById("spinBtn");
   const betButtons = document.querySelectorAll(".bet");
+  const reels = document.querySelectorAll(".reel img");
+  const resetBtn = document.getElementById("resetBtn");
 
-  const reel1 = document.getElementById("reel1");
-  const reel2 = document.getElementById("reel2");
-  const reel3 = document.getElementById("reel3");
-
-  const symbols = ["b1", "b2", "b3", "ch", "s7", "sc"];
-
-  // Winning payout table: multiplier per bet if all reels match
+  // Updated payouts
   const payouts = {
-    "ch,ch,ch": 150,
-    "s7,s7,s7": 50,
-    "sc,sc,sc": 20,
-    "b3,b3,b3": 10,
-    "b2,b2,b2": 5,
-    "b1,b1,b1": 2
+    "ch": 50, 
+    "s7": 10, 
+    "sc": 5, 
+    "b3": 4, 
+    "b2": 3, 
+    "b1": 2
   };
 
-  function updateCredits() {
-    creditDisplay.textContent = `Credits: $${credits}`;
+  // Fetch win percentage for free version
+  fetch('/api/get-win-percentage-free')
+    .then(res => res.json())
+    .then(data => winPercentage = data.percentage);
+
+  function updateBalance() {
+    balanceDisplay.textContent = credits;
   }
 
-  // Set bet amount when bet button is clicked
   betButtons.forEach((button, index) => {
     const betValues = [1, 5, 10, 50, 100, 1000];
     button.addEventListener("click", () => {
@@ -42,47 +41,36 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("Not enough credits or no bet selected!");
       return;
     }
-    // Deduct bet
+
     credits -= currentBet;
-    updateCredits();
+    updateBalance();
 
-    // Spin reels with a rolling effect
-    const spinReel = (reelElement, finalSymbol, delay) => {
-      let interval = setInterval(() => {
-        let randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
-        reelElement.innerHTML = `<img src="/assets/${randomSymbol}.png" alt="${randomSymbol}" width="80px">`;
-      }, 100);
+    const result = [];
+    const symbolFiles = ["b1.png", "b2.png", "b3.png", "ch.png", "s7.png", "sc.png"];
+
+    reels.forEach((reel, idx) => {
       setTimeout(() => {
-        clearInterval(interval);
-        reelElement.innerHTML = `<img src="/assets/${finalSymbol}.png" alt="${finalSymbol}" width="80px">`;
-      }, delay);
-    };
-
-    let result1 = symbols[Math.floor(Math.random() * symbols.length)];
-    let result2 = symbols[Math.floor(Math.random() * symbols.length)];
-    let result3 = symbols[Math.floor(Math.random() * symbols.length)];
-
-    spinReel(reel1, result1, 1000);
-    spinReel(reel2, result2, 1300);
-    spinReel(reel3, result3, 1600);
+        let symbol = symbolFiles[Math.floor(Math.random() * symbolFiles.length)];
+        reel.src = `/assets/${symbol}`;
+        result[idx] = symbol;
+      }, idx * 150);
+    });
 
     setTimeout(() => {
-      let resultKey = `${result1},${result2},${result3}`;
-      if (payouts[resultKey] && Math.random()*100 < winPercentage) {
-        let winnings = currentBet * payouts[resultKey];
-        credits += winnings;
+      if (result[0] === result[1] && result[1] === result[2]) {
+        const basePayout = payouts[result[0]] || 1;
+        const winAmount = currentBet * basePayout * (winPercentage / 100);
+        credits += winAmount;
       }
-      updateCredits();
-    }, 1700);
+      updateBalance();
+    }, 900);
   }
 
-  spinButton.addEventListener("click", spinReels);
-
-  resetButton.addEventListener("click", () => {
-    credits = 50;
-    currentBet = 0;
-    updateCredits();
+  spinBtn.addEventListener("click", spinReels);
+  resetBtn.addEventListener("click", () => {
+    credits = 1000;
+    updateBalance();
   });
 
-  updateCredits();
+  updateBalance();
 });
