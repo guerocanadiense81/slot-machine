@@ -1,3 +1,6 @@
+// /js/wallet.js
+const API_URL = 'https://slot-machine-a08c.onrender.com';
+
 window.addEventListener("load", async () => {
   if (typeof window.ethereum !== "undefined") {
     const connectBtn = document.getElementById("connectWallet");
