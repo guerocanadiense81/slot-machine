@@ -1,33 +1,59 @@
+<!-- /views/contact.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Contact Us</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <header>
+    <h1>Contact Us</h1>
     <nav>
-      <a href="/index.html">Home</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">Instructions</a>
+      <a href="/views/index.html">Free Game</a>
+      <a href="/views/paid.html">Paid Game</a>
+      <a href="/views/about.html">About</a>
+      <a href="/views/instructions.html">Instructions</a>
+      <a href="/views/admin-login.html">Admin</a>
     </nav>
   </header>
-  <div class="contact-container">
-    <h1>Contact Us</h1>
-    <p>Please fill out the form below to send us a message.</p>
+
+  <section>
     <form id="contactForm">
-      <label for="name">Your Name</label>
-      <input type="text" id="name" placeholder="Enter your name" required>
-      <label for="email">Your Email</label>
-      <input type="email" id="email" placeholder="Enter your email" required>
-      <label for="message">Message</label>
-      <textarea id="message" rows="5" placeholder="Write your message here..." required></textarea>
+      <input type="text" id="name" placeholder="Your Name" required /><br/>
+      <input type="email" id="email" placeholder="Your Email" required /><br/>
+      <textarea id="message" placeholder="Your Message" rows="5" cols="40" required></textarea><br/>
       <button type="submit">Send Message</button>
     </form>
-    <p class="success-message" id="successMessage" style="display: none;">Your message has been sent successfully!</p>
-  </div>
-  <script src="/js/contact.js"></script>
+    <div id="contactStatus" style="margin-top: 15px;"></div>
+  </section>
+
+  <script>
+    document.getElementById("contactForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const message = document.getElementById("message").value;
+
+      try {
+        const res = await fetch("https://slot-machine-a08c.onrender.com/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, message })
+        });
+        const result = await res.json();
+        if (result.success) {
+          document.getElementById("contactStatus").innerText = "Message sent!";
+          document.getElementById("contactForm").reset();
+        } else {
+          document.getElementById("contactStatus").innerText = "Failed to send.";
+        }
+      } catch (err) {
+        console.error("Error sending message:", err);
+        document.getElementById("contactStatus").innerText = "Server error.";
+      }
+    });
+  </script>
 </body>
 </html>
