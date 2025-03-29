@@ -1,24 +1,28 @@
-/* General Styles */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+/* Global Styles */
 body {
     margin: 0;
     background: linear-gradient(to top, #000, #1f513b) fixed;
-    font-family: Arial, sans-serif;
+    font-family: 'Orbitron', sans-serif;
     text-align: center;
+    color: #39FF14;
+    text-shadow: 0 0 3px #39FF14;
 }
 
+h1, h2, h3 {
+    margin-top: 10px;
+}
+
+/* Navigation */
 nav {
-    background: #222;
+    background: #111;
     padding: 10px;
 }
 nav a {
-    color: white;
+    color: #39FF14;
     margin: 0 15px;
     text-decoration: none;
-}
-
-h1 {
-    color: white;
-    margin-top: 10px;
 }
 
 /* Points Tab */
@@ -29,10 +33,12 @@ h1 {
     padding: 10px;
 }
 .point {
-    background: #fff;
+    background: #000;
+    border: 1px solid #39FF14;
     border-radius: 5px;
     padding: 5px;
     font-size: 16px;
+    box-shadow: 0 0 5px #39FF14;
 }
 .point img {
     height: 20px;
@@ -55,7 +61,7 @@ h1 {
     padding-top: 30px;
 }
 
-/* Reel Container (Inside the Machine) */
+/* Reel Container */
 .reel-container {
     position: absolute;
     top: 150px;
@@ -66,7 +72,7 @@ h1 {
     justify-content: space-between;
 }
 
-/* Individual Reel Slots */
+/* Reels */
 .reel {
     width: 110px;
     height: 220px;
@@ -82,7 +88,7 @@ h1 {
     height: 90px;
 }
 
-/* Controls (Bet Buttons) */
+/* Bet Buttons */
 .controls {
     display: flex;
     justify-content: center;
@@ -109,10 +115,17 @@ h1 {
     gap: 10px;
     margin-top: 10px;
 }
-.spinBtn {
+.spinBtn, #calculateMetBtn, #buyMetBtn, #cashOutBtn, #connectWallet {
     padding: 10px 20px;
     font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
+    background: #000;
+    border: 2px solid #39FF14;
+    border-radius: 5px;
+    color: #39FF14;
+    text-shadow: 0 0 5px #39FF14;
+    box-shadow: 0 0 10px #39FF14;
 }
 #resetBtn img {
     width: 70px;
@@ -123,10 +136,73 @@ h1 {
     transform: scale(0.9);
 }
 
-/* Credits Display */
-#totalCredits {
+/* Credits */
+#totalCredits, #metBalance {
     font-size: 20px;
-    color: white;
     font-weight: bold;
     margin-top: 20px;
+}
+
+/* Buy MET & Cash Out Sections */
+#buyMetSection,
+#cashOutSection {
+    margin-top: 20px;
+    border-top: 1px solid #39FF14;
+    padding-top: 20px;
+    animation: neonFlash 1.5s ease-in-out infinite;
+}
+#buyMetSection input {
+    padding: 8px;
+    font-size: 16px;
+    width: 150px;
+}
+
+/* Neon Flash Animation */
+@keyframes neonFlash {
+  0%, 100% {
+    color: #39FF14;
+    text-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14;
+  }
+  50% {
+    color: #fff;
+    text-shadow: 0 0 15px #39FF14, 0 0 30px #39FF14;
+  }
+}
+
+/* Admin Dashboard */
+input[type=number], input[type=text] {
+    padding: 10px;
+    font-size: 16px;
+    width: 200px;
+    margin-bottom: 10px;
+    background: #000;
+    border: 1px solid #39FF14;
+    color: #39FF14;
+}
+#transactionLog div {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #39FF14;
+    background: #111;
+}
+#metrics, #houseWalletSection {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #39FF14;
+    background: #111;
+}
+#clearLogsBtn, #logoutBtn {
+    background: #FF4500;
+    color: white;
+    padding: 10px 15px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+}
+
+/* Instructions, About, Contact Pages */
+.page-content {
+    padding: 20px;
+    color: #39FF14;
+    text-shadow: 0 0 3px #39FF14;
 }
