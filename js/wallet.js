@@ -1,14 +1,19 @@
-window.addEventListener("load", async () => {
+const API_URL = 'https://slot-machine-a08c.onrender.com';
+
+window.addEventListener("DOMContentLoaded", async () => {
   if (typeof window.ethereum !== "undefined") {
     const connectBtn = document.getElementById("connectWallet");
+    const walletText = document.getElementById("walletAddress");
 
     connectBtn?.addEventListener("click", async () => {
       try {
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        const wallet = accounts[0];
-        document.getElementById("walletAddress")?.innerText = `Wallet: ${wallet}`;
+        if (accounts.length > 0 && walletText) {
+          walletText.innerText = `Wallet: ${accounts[0]}`;
+        }
       } catch (err) {
-        console.error("Wallet connection failed", err);
+        console.error("Wallet connection failed:", err);
+        alert("MetaMask connection failed.");
       }
     });
   } else {
