@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const Web3 = require("web3");
+const { Web3 } = require("web3");
 const bodyParser = require("body-parser");
 const winston = require("winston");
 const TelegramBot = require("node-telegram-bot-api");
