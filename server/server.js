@@ -1,4 +1,5 @@
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -178,7 +179,10 @@ app.post("/api/admin-login", (req, res) => {
     username === process.env.ADMIN_USERNAME &&
     password === process.env.ADMIN_PASSWORD
   ) {
-    res.json({ success: true });
+    const token = jwt.sign({ user: username }, process.env.JWT_SECRET, {
+      expiresIn: "2h",
+    });
+    res.json({ token });
   } else {
     res.status(403).json({ error: "Unauthorized" });
   }
