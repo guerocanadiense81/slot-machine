@@ -1,60 +1,48 @@
+<!-- /views/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Free Slot Machine</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>Free Slot Machine</h1>
-    <nav>
-      <a href="/paid.html">Play Paid Version</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">Instructions</a>
-      <a href="/contact.html">Contact Us</a>
-      <a href="/admin-login.html">Admin</a>
-    </nav>
-  </header>
+  <nav>
+    <a href="/views/index.html">Free Game</a>
+    <a href="/views/paid.html">Paid Game</a>
+    <a href="/views/about.html">About</a>
+    <a href="/views/instructions.html">Instructions</a>
+    <a href="/views/contact.html">Contact</a>
+  </nav>
 
-  <!-- Points Tab -->
-  <div class="points-tab">
-    <div class="point"><img src="/assets/ch.png" alt="Cherry"> x150</div>
-    <div class="point"><img src="/assets/s7.png" alt="Seven"> x50</div>
-    <div class="point"><img src="/assets/sc.png" alt="Scatter"> x20</div>
-    <div class="point"><img src="/assets/b3.png" alt="Bar3"> x10</div>
-    <div class="point"><img src="/assets/b2.png" alt="Bar2"> x5</div>
-    <div class="point"><img src="/assets/b1.png" alt="Bar1"> x2</div>
-  </div>
+  <h1>🎰 Free MET Slot Machine</h1>
 
-  <!-- Slot Machine (background via CSS) -->
   <div id="slot-machine">
     <div class="reel-container">
-      <div class="reel" id="reel1"><img src="/assets/reel-strip125.png" alt="Reel 1"></div>
-      <div class="reel" id="reel2"><img src="/assets/reel-strip125.png" alt="Reel 2"></div>
-      <div class="reel" id="reel3"><img src="/assets/reel-strip125.png" alt="Reel 3"></div>
+      <div class="reel"><img src="/assets/b1.png" alt="reel" /></div>
+      <div class="reel"><img src="/assets/b2.png" alt="reel" /></div>
+      <div class="reel"><img src="/assets/b3.png" alt="reel" /></div>
     </div>
   </div>
 
-  <!-- Bet Buttons -->
+  <div class="points-tab">
+    <div class="point">Total Credits: <span id="totalCredits">1000</span></div>
+  </div>
+
   <div class="controls">
-    <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="1 MET"></button>
-    <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="5 MET"></button>
-    <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="10 MET"></button>
-    <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="50 MET"></button>
-    <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="100 MET"></button>
-    <button class="bet" data-bet="1000"><img src="/assets/1000go.png" alt="1000 MET"></button>
+    <button class="bet"><img src="/assets/1go.png" alt="1 Credit" /></button>
+    <button class="bet"><img src="/assets/5go.png" alt="5 Credits" /></button>
+    <button class="bet"><img src="/assets/10go.png" alt="10 Credits" /></button>
+    <button class="bet"><img src="/assets/50go.png" alt="50 Credits" /></button>
+    <button class="bet"><img src="/assets/100go.png" alt="100 Credits" /></button>
+    <button class="bet"><img src="/assets/1000go.png" alt="1000 Credits" /></button>
   </div>
 
-  <!-- Bottom Controls -->
   <div class="bottom-controls">
-    <button id="spinBtn" class="spinBtn">Spin</button>
-    <button id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset"></button>
+    <button id="spinBtn" class="spinBtn">SPIN</button>
+    <div id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></div>
   </div>
-
-  <!-- Credits Display -->
-  <p id="totalCredits">Credits: $50</p>
 
   <script src="/js/game.js"></script>
 </body>
