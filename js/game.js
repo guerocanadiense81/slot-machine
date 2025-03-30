@@ -1,7 +1,7 @@
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
 let winPercentage = 30;
-let credits = 0;
+let credits = 1000;
 let currentBet = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
