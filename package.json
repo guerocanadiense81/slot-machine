@@ -1,23 +1,22 @@
 {
   "name": "slot-machine-project",
   "version": "1.0.0",
-  "description": "Decentralized slot machine using MET token on BSC",
+  "description": "Decentralized slot machine DApp using MET tokens on BSC",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js"
   },
-  "keywords": ["slot-machine", "dapp", "bsc", "met", "web3", "express"],
-  "author": "guerocanadiense81",
+  "author": "Your Name",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.61.0",
-    "web3": "^1.10.0",
-    "winston": "^3.9.0"
+    "winston": "^3.9.0",
+    "web3": "^1.10.0"
   }
 }
