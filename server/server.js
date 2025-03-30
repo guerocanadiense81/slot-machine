@@ -1,133 +1,200 @@
-// server.js
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+const TelegramBot = require("node-telegram-bot-api");
+const { Web3 } = require("web3");
+const winston = require("winston");
 
-require('dotenv').config();
-const express = require('express');
-const bodyParser = require('body-parser');
-const fs = require('fs');
-const cors = require('cors');
-const Web3 = require('web3');
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "../assets")));
+app.use(express.static(path.join(__dirname, "../views")));
+app.use(express.static(path.join(__dirname, "../css")));
+app.use(express.static(path.join(__dirname, "../js")));
 
+const tokenABI = require("../abi/METToken.json");
+
+// Web3 + Contract Setup
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.BSC_RPC_URL));
-const contractABI = require('./abi/METToken.json');
-const contractAddress = process.env.TOKEN_CONTRACT;
-const metToken = new web3.eth.Contract(contractABI, contractAddress);
-
+const contract = new web3.eth.Contract(tokenABI, process.env.MET_CONTRACT_ADDRESS);
 const houseWallet = process.env.HOUSE_WALLET;
-const housePrivateKey = process.env.HOUSE_PRIVATE_KEY;
+const privateKey = process.env.PRIVATE_KEY;
 
-let playerBalances = {};
-let transactionLog = [];
+// Telegram Bot
+const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
 
-function logEvent(type, wallet, value) {
-  const entry = { time: new Date().toISOString(), type, wallet, value };
-  transactionLog.push(entry);
-  fs.appendFileSync('logs/transactions.log', JSON.stringify(entry) + '\n');
+// Logger
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [new winston.transports.File({ filename: "logs/transactions.log" })],
+});
+
+// In-memory balances
+let balances = {}; // { wallet: credits }
+
+function addCredits(wallet, amount) {
+  if (!balances[wallet]) balances[wallet] = 0;
+  balances[wallet] += parseFloat(amount);
 }
 
-app.post('/api/confirm-purchase', async (req, res) => {
-  const { buyer, usdAmount } = req.body;
-  if (!buyer || !usdAmount) return res.status(400).json({ error: 'Invalid input' });
+function subtractCredits(wallet, amount) {
+  if (!balances[wallet]) balances[wallet] = 0;
+  balances[wallet] -= parseFloat(amount);
+  if (balances[wallet] < 0) balances[wallet] = 0;
+}
 
-  const amountWei = web3.utils.toWei(usdAmount.toString(), 'ether');
+// === ROUTES ===
+
+// ✅ Get live BNB price
+app.get("/api/get-bnb-price", async (req, res) => {
+  try {
+    const price = await contract.methods.getLatestBNBPrice().call();
+    res.json({ bnbPrice: parseFloat(price) / 1e8 });
+  } catch (err) {
+    logger.error("BNB price fetch error", { error: err.message });
+    res.status(500).json({ error: "BNB price unavailable." });
+  }
+});
+
+// ✅ Confirm token purchase (after BNB sent)
+app.post("/api/confirm-purchase", async (req, res) => {
+  const { buyer, usdAmount } = req.body;
+  if (!buyer || !usdAmount) return res.status(400).json({ error: "Missing buyer or amount" });
 
   try {
-    const tx = metToken.methods.transfer(buyer, amountWei);
+    const amount = web3.utils.toWei(usdAmount.toString(), "ether");
+    const tx = contract.methods.purchaseTokens(buyer, amount);
     const gas = await tx.estimateGas({ from: houseWallet });
-    const data = tx.encodeABI();
-    const nonce = await web3.eth.getTransactionCount(houseWallet);
+    const txData = tx.encodeABI();
 
-    const signedTx = await web3.eth.accounts.signTransaction({
-      to: contractAddress,
-      data,
-      gas,
-      nonce,
-      chainId: 56
-    }, housePrivateKey);
+    const signedTx = await web3.eth.accounts.signTransaction(
+      { to: process.env.MET_CONTRACT_ADDRESS, data: txData, gas },
+      privateKey
+    );
 
     const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    logEvent('Purchase', buyer, usdAmount);
-    res.json({ success: true, txHash: receipt.transactionHash });
+    logger.info("MET Purchase Confirmed", { buyer, usdAmount, tx: receipt.transactionHash });
+
+    res.json({ success: true, tx: receipt.transactionHash });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Token transfer failed' });
+    logger.error("PurchaseTokens Error", { error: err.message });
+    res.status(500).json({ error: "Token transfer failed." });
   }
 });
 
-app.get('/api/get-win-percentages', (req, res) => {
-  res.json({ paid: 30, free: 50 });
-});
-
-app.get('/api/get-bnb-price', async (req, res) => {
-  try {
-    const coingecko = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd');
-    const data = await coingecko.json();
-    res.json({ bnbPrice: data.binancecoin.usd });
-  } catch (e) {
-    console.error('Error fetching BNB price', e);
-    res.status(500).json({ error: 'Failed to fetch price' });
-  }
-});
-
-// Hybrid Off-Chain Balance API
-app.post('/api/balance', (req, res) => {
-  const { wallet } = req.body;
-  if (!wallet) return res.status(400).json({ error: 'No wallet provided' });
-  res.json({ credits: playerBalances[wallet] || 0 });
-});
-
-app.post('/api/spin', (req, res) => {
+// ✅ Spin - Deduct credits, log outcome
+app.post("/api/spin", (req, res) => {
   const { wallet, bet, result, winAmount } = req.body;
-  if (!wallet || !bet || typeof winAmount !== 'number') {
-    return res.status(400).json({ error: 'Invalid spin data' });
+  if (!wallet || isNaN(bet)) return res.status(400).json({ error: "Invalid spin data" });
+
+  subtractCredits(wallet, bet);
+  if (winAmount && winAmount > 0) {
+    addCredits(wallet, winAmount);
+    logger.info("Spin Win", { wallet, bet, result, winAmount });
+    if (winAmount >= 500) {
+      telegramBot.sendMessage(
+        process.env.TELEGRAM_CHAT_ID,
+        `🎉 BIG WIN!\nWallet: ${wallet}\nWinnings: ${winAmount} MET`
+      );
+    }
+  } else {
+    logger.info("Spin Loss", { wallet, bet, result });
   }
 
-  playerBalances[wallet] = (playerBalances[wallet] || 0) - bet + winAmount;
-  logEvent('Spin', wallet, winAmount > 0 ? `Win ${winAmount}` : `Loss ${bet}`);
-  res.json({ success: true, balance: playerBalances[wallet] });
+  res.json({ success: true, credits: balances[wallet] });
 });
 
-app.post('/api/cashout', (req, res) => {
+// ✅ Get balance
+app.post("/api/balance", (req, res) => {
   const { wallet } = req.body;
-  if (!wallet || !playerBalances[wallet]) {
-    return res.status(400).json({ error: 'Nothing to cashout' });
+  if (!wallet) return res.status(400).json({ error: "Missing wallet" });
+  const credits = balances[wallet] || 0;
+  res.json({ credits });
+});
+
+// ✅ Cash out MET (on-chain)
+app.post("/api/cashout", async (req, res) => {
+  const { wallet } = req.body;
+  if (!wallet) return res.status(400).json({ error: "Missing wallet" });
+
+  const amount = balances[wallet] || 0;
+  if (amount <= 0) return res.status(400).json({ error: "No credits to cash out" });
+
+  try {
+    const weiAmount = web3.utils.toWei(amount.toString(), "ether");
+    const tx = contract.methods.winBet(wallet, weiAmount);
+    const gas = await tx.estimateGas({ from: houseWallet });
+    const txData = tx.encodeABI();
+
+    const signedTx = await web3.eth.accounts.signTransaction(
+      { to: process.env.MET_CONTRACT_ADDRESS, data: txData, gas },
+      privateKey
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    logger.info("Cashout Sent", { wallet, amount, tx: receipt.transactionHash });
+
+    balances[wallet] = 0;
+    res.json({ success: true, tx: receipt.transactionHash });
+  } catch (err) {
+    logger.error("Cashout Error", { error: err.message });
+    res.status(500).json({ error: "Cashout failed." });
   }
-
-  const amount = playerBalances[wallet];
-  playerBalances[wallet] = 0;
-  logEvent('Cashout', wallet, amount);
-  res.json({ success: true, amount });
 });
 
-app.post('/api/send-bonus', (req, res) => {
+// ✅ Send Bonus (Admin)
+app.post("/api/send-bonus", (req, res) => {
   const { wallet, amount } = req.body;
-  if (!wallet || isNaN(amount)) return res.status(400).json({ error: 'Invalid bonus' });
+  if (!wallet || isNaN(amount)) return res.status(400).json({ error: "Invalid data" });
 
-  playerBalances[wallet] = (playerBalances[wallet] || 0) + parseFloat(amount);
-  logEvent('Bonus', wallet, amount);
-  res.json({ success: true, newBalance: playerBalances[wallet] });
+  addCredits(wallet, amount);
+  logger.info("Bonus Sent", { wallet, amount });
+  res.json({ success: true });
 });
 
-app.get('/api/players', (req, res) => {
-  const summary = Object.entries(playerBalances).map(([wallet, balance]) => ({
-    wallet,
-    balance
-  }));
-  res.json(summary);
+// ✅ Export all balances to CSV
+app.get("/api/export-balances", (req, res) => {
+  const header = "wallet,credits\n";
+  const rows = Object.entries(balances)
+    .map(([wallet, balance]) => `${wallet},${balance.toFixed(2)}`)
+    .join("\n");
+
+  const csv = header + rows;
+  const filePath = path.join(__dirname, "../logs/player-balances.csv");
+
+  fs.writeFileSync(filePath, csv);
+  res.download(filePath);
 });
 
-app.get('/api/export-log', (req, res) => {
-  const csv = 'Time,Type,Wallet,Value\n' + transactionLog.map(e => `${e.time},${e.type},${e.wallet},${e.value}`).join('\n');
-  res.header('Content-Type', 'text/csv');
-  res.attachment('transactions.csv');
-  return res.send(csv);
+// ✅ Get all balances
+app.get("/api/balances", (req, res) => {
+  res.json(balances);
 });
 
+// ✅ Admin login (basic)
+app.post("/api/admin-login", (req, res) => {
+  const { username, password } = req.body;
+  if (
+    username === process.env.ADMIN_USERNAME &&
+    password === process.env.ADMIN_PASSWORD
+  ) {
+    res.json({ success: true });
+  } else {
+    res.status(403).json({ error: "Unauthorized" });
+  }
+});
+
+// ✅ Default fallback
+app.get("*", (req, res) => {
+  res.send("🎰 Slot Machine API Running.");
+});
+
+// ✅ Start Server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
