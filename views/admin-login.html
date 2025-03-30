@@ -2,53 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Login</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>Admin Login</h1>
-    <nav>
-      <a href="/index.html">Free Game</a>
-      <a href="/paid.html">Paid Game</a>
-    </nav>
-  </header>
-
-  <main>
-    <input type="text" id="adminUsername" placeholder="Username" />
-    <input type="password" id="adminPassword" placeholder="Password" />
-    <button id="loginBtn">Login</button>
-    <p id="loginStatus"></p>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Slot Machine | <a href="#">Privacy Policy</a> | <a href="#">Terms</a></p>
-    <p>
-      <a href="https://twitter.com" target="_blank">Twitter</a> |
-      <a href="https://github.com" target="_blank">GitHub</a> |
-      <a href="mailto:support@metmachine.com">Contact</a>
-    </p>
-  </footer>
+  <h1>🔐 Admin Login</h1>
+  <form id="adminLoginForm">
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button type="submit">Login</button>
+  </form>
 
   <script>
-    const API_URL = 'https://slot-machine-a08c.onrender.com';
+    document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
-      const username = document.getElementById("adminUsername").value.trim();
-      const password = document.getElementById("adminPassword").value.trim();
-
-      const res = await fetch(`${API_URL}/api/admin-login`, {
+      const res = await fetch("/api/admin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
 
       const data = await res.json();
-      if (data.token) {
-        localStorage.setItem("jwt", data.token);
-        window.location.href = "/admin.html";
+      if (data.success) {
+        location.href = "/admin.html";
       } else {
-        document.getElementById("loginStatus").textContent = data.error || "Login failed";
+        alert("Login failed.");
       }
     });
   </script>
