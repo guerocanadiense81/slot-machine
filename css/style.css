@@ -1,222 +1,79 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
-
-/* Global Styles */
-body {
-    margin: 0;
-    background: linear-gradient(to top, #000, #1f513b) fixed;
-    font-family: 'Orbitron', sans-serif;
-    text-align: center;
-    color: #39FF14;
-    text-shadow: 0 0 3px #39FF14;
+/* Center slot machine frame */
+#slotFrame {
+  text-align: center;
+  margin-top: 40px;
+  position: relative;
 }
 
-h1, h2, h3 {
-    margin-top: 10px;
+/* Slot machine image centered */
+#slotFrame img {
+  width: 500px;
+  max-width: 90%;
 }
 
-/* Navigation */
-nav {
-    background: #111;
-    padding: 10px;
-}
-nav a {
-    color: #39FF14;
-    margin: 0 15px;
-    text-decoration: none;
-}
-
-/* Points Tab */
-.points-tab {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding: 10px;
-}
-.point {
-    background: #000;
-    border: 1px solid #39FF14;
-    border-radius: 5px;
-    padding: 5px;
-    font-size: 16px;
-    box-shadow: 0 0 5px #39FF14;
-}
-.point img {
-    height: 20px;
-    vertical-align: middle;
+/* Reels placed on top of the machine */
+#reels {
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 95px; /* adjust to align perfectly with frame slots */
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 15px;
 }
 
-/* Slot Machine */
-#slot-machine {
-    position: relative;
-    width: 600px;
-    height: 450px;
-    margin: 0 auto;
-    background-image: url("/assets/slotmachine.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 30px;
-}
-
-/* Reel Container */
-.reel-container {
-    position: absolute;
-    top: 150px;
-    left: 135px;
-    width: 330px;
-    height: 100px;
-    display: flex;
-    justify-content: space-between;
-}
-
-/* Reels */
-.reel {
-    width: 110px;
-    height: 220px;
-    background: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    overflow: hidden;
-}
 .reel img {
-    width: 109px;
-    height: 90px;
+  width: 100px;
+  height: 100px;
+  background: black;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #0f0;
 }
 
-/* Bet Buttons */
-.controls {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
+/* Bet chip buttons */
+.bet-chips {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 15px 0;
 }
+
 .bet {
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin: 0 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
+
 .bet img {
-    width: 60px;
-    transition: transform 0.2s;
-}
-.bet img:hover {
-    transform: scale(1.1);
+  width: 60px;
+  height: auto;
 }
 
-/* Bottom Controls */
-.bottom-controls {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
+/* Spin button styling */
+#spinBtn {
+  display: block;
+  margin: 10px auto;
+  padding: 12px 28px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background-color: #00ff00;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 10px #0f0;
 }
-.spinBtn, #calculateMetBtn, #buyMetBtn, #cashOutBtn, #connectWallet {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    background: #000;
-    border: 2px solid #39FF14;
-    border-radius: 5px;
-    color: #39FF14;
-    text-shadow: 0 0 5px #39FF14;
-    box-shadow: 0 0 10px #39FF14;
+
+/* Reset button image styling */
+#resetBtn {
+  background: none;
+  border: none;
+  display: inline-block;
+  cursor: pointer;
 }
+
 #resetBtn img {
-    width: 70px;
-    cursor: pointer;
-    transition: transform 0.2s;
+  width: 100px;
+  height: auto;
 }
-#resetBtn img:hover {
-    transform: scale(0.9);
-}
-
-/* Credits */
-#totalCredits, #metBalance {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 20px;
-}
-
-/* Buy MET & Cash Out Sections */
-#buyMetSection,
-#cashOutSection {
-    margin-top: 20px;
-    border-top: 1px solid #39FF14;
-    padding-top: 20px;
-    animation: neonFlash 1.5s ease-in-out infinite;
-}
-#buyMetSection input {
-    padding: 8px;
-    font-size: 16px;
-    width: 150px;
-}
-
-/* Neon Flash Animation */
-@keyframes neonFlash {
-  0%, 100% {
-    color: #39FF14;
-    text-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14;
-  }
-  50% {
-    color: #fff;
-    text-shadow: 0 0 15px #39FF14, 0 0 30px #39FF14;
-  }
-}
-
-/* Admin Dashboard */
-input[type=number], input[type=text] {
-    padding: 10px;
-    font-size: 16px;
-    width: 200px;
-    margin-bottom: 10px;
-    background: #000;
-    border: 1px solid #39FF14;
-    color: #39FF14;
-}
-#transactionLog div {
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #39FF14;
-    background: #111;
-}
-#metrics, #houseWalletSection {
-    margin-top: 20px;
-    padding: 10px;
-    border: 1px solid #39FF14;
-    background: #111;
-}
-#clearLogsBtn, #logoutBtn {
-    background: #FF4500;
-    color: white;
-    padding: 10px 15px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 5px;
-}
-
-/* Instructions, About, Contact Pages */
-.page-content {
-    padding: 20px;
-    color: #39FF14;
-    text-shadow: 0 0 3px #39FF14;
-}
-
-/* ------------------------------------
-   Slot Machine Reel Animation
------------------------------------- */
-.reel img.spinning {
-  animation: spinEffect 0.5s ease-in-out infinite;
-}
-
-@keyframes spinEffect {
-  0% { transform: rotateX(0deg); }
-  50% { transform: rotateX(180deg); }
-  100% { transform: rotateX(360deg); }
-}
-
