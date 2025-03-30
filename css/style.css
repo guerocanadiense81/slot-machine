@@ -39,8 +39,8 @@ h1 {
 /* Slot Machine */
 #slot-machine {
   position: relative;
-  width: 700px;
-  height: 480px;
+  width: 500px;
+  height: 280px;
   margin: 0 auto;
   background-image: url("/assets/slotmachineidea.png");
   background-size: contain;
