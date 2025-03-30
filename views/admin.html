@@ -2,40 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <header>
-    <h1>Admin Dashboard</h1>
     <nav>
       <a href="/index.html">Free Game</a>
       <a href="/paid.html">Paid Game</a>
-      <button id="logoutBtn">Logout</button>
+      <a href="/about.html">About</a>
+      <a href="/instructions.html">How to Play</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/admin-login.html">Logout</a>
     </nav>
   </header>
 
-  <main>
-    <section>
-      <h2>Win % Settings</h2>
-      <label>Paid Win %: <input type="number" id="paidWinPercent" /></label><br />
-      <label>Free Win %: <input type="number" id="freeWinPercent" /></label><br />
-      <button id="updateWinBtn">Update</button>
+  <main class="admin-dashboard">
+    <h1>⚙️ Admin Dashboard</h1>
+
+    <section class="win-percent-section">
+      <h2>🎯 Win Percentages</h2>
+      <p>Current Paid Win %: <strong id="paidWinCurrent">Loading...</strong></p>
+      <p>Current Free Win %: <strong id="freeWinCurrent">Loading...</strong></p>
+
+      <label for="paidWinPercent">Update Paid Win %</label>
+      <input type="number" id="paidWinPercent" min="0" max="100" />
+
+      <label for="freeWinPercent">Update Free Win %</label>
+      <input type="number" id="freeWinPercent" min="0" max="100" />
+
+      <button id="updateWinBtn">Update Win %</button>
+      <p id="updateStatus" class="info-text"></p>
     </section>
 
-    <section id="transactionLog">
-      <h2>Transaction Logs</h2>
-      <!-- Logs will be injected here -->
+    <section class="coming-soon">
+      <h2>🗞️ News & Airdrops</h2>
+      <p>More features like bonus logs, airdrop registration, and analytics will be added here soon.</p>
     </section>
   </main>
 
   <footer>
-    <p>&copy; 2025 Slot Machine | <a href="#">Privacy Policy</a> | <a href="#">Terms</a></p>
-    <p>
-      <a href="https://twitter.com" target="_blank">Twitter</a> |
-      <a href="https://github.com" target="_blank">GitHub</a> |
-      <a href="mailto:support@metmachine.com">Contact</a>
-    </p>
+    <p>&copy; 2025 MET Slot Machine | Built on BSC</p>
   </footer>
 
   <script src="/js/admin.js"></script>
