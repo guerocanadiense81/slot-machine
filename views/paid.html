@@ -1,102 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paid Slot Machine</title>
-  <link rel="stylesheet" href="/css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paid Slot Game</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <script src="/js/wallet.js"></script>
+    <script src="/js/paid-game.js"></script>
 </head>
 <body>
-  <header>
-    <nav>
-      <ul class="nav">
-        <li><a href="/index.html">Free Game</a></li>
-        <li><a href="/paid.html">Paid Game</a></li>
-        <li><a href="/about.html">About</a></li>
-        <li><a href="/instructions.html">How to Play</a></li>
-        <li><a href="/contact.html">Contact</a></li>
-        <li><a href="/admin-login.html">Admin</a></li>
-      </ul>
-    </nav>
-  </header>
+    <header>
+        <nav>
+            <a href="/index.html">Free Game</a>
+            <a href="/paid.html">Paid Game</a>
+            <a href="/about.html">About</a>
+            <a href="/instructions.html">How to Play</a>
+            <a href="/contact.html">Contact</a>
+            <a href="/admin-login.html">Admin</a>
+        </nav>
+    </header>
 
-  <main class="main-container">
     <h1>🎰 Paid Slot Machine</h1>
-    
-    <!-- Slot Machine Frame -->
-    <div id="slot-machine">
-      <div class="reel-container">
-        <!-- 6 reels -->
-        <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
-        <div class="reel"><img src="/assets/coins1.png" alt="reel" /></div>
-        <div class="reel"><img src="/assets/crown.png" alt="reel" /></div>
-        <div class="reel"><img src="/assets/goldbar.png" alt="reel" /></div>
-        <div class="reel"><img src="/assets/key.png" alt="reel" /></div>
-        <div class="reel"><img src="/assets/chest.png" alt="reel" /></div>
-      </div>
+
+    <div class="points-tab">
+        <div class="point">Balance: <span id="metBalance">0</span> MET</div>
+        <div class="point"><button id="connectWallet">Connect Wallet</button></div>
     </div>
 
-    <!-- Bet Chips -->
-    <div class="bet-chips">
-      <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
-      <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
-      <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
-      <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
-      <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
-    </div>
-
-    <!-- Actions -->
-    <div class="actions">
-      <button id="spinBtn">🎲 Spin</button>
-      <!-- For the paid version, we remove the reset button -->
-      <button id="cashOutBtn">💵 Cash Out</button>
-    </div>
-
-    <!-- Credits Display -->
-    <div id="totalCredits">Credits: 0</div>
-
-    <!-- Buy MET Section -->
-    <section id="buyMetSection">
-      <h2>🪙 Buy MET Tokens</h2>
-      <p>Enter either <strong>USD</strong> or <strong>BNB</strong>:</p>
-      <input type="number" id="usdAmount" placeholder="Enter USD" />
-      <input type="number" id="bnbAmount" placeholder="Or Enter BNB" />
-      <br /><br />
-      <button id="calculateMetBtn">Calculate</button>
-      <p id="metEstimate">Estimated: —</p>
-      <button id="buyNowBtn">Buy Now</button>
+    <section id="slot-machine" style="position: relative;">
+        <div class="reel-container">
+            <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
+            <div class="reel"><img src="/assets/coins1.png" alt="reel" /></div>
+            <div class="reel"><img src="/assets/crown.png" alt="reel" /></div>
+            <div class="reel"><img src="/assets/goldbar.png" alt="reel" /></div>
+            <div class="reel"><img src="/assets/key.png" alt="reel" /></div>
+            <div class="reel"><img src="/assets/chest.png" alt="reel" /></div>
+        </div>
     </section>
-  </main>
 
-  <!-- Debug Panel (for adjusting sizes in real time) -->
-  <div id="debugger" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #00ff66; padding: 10px; border-radius: 8px; z-index: 1000;">
-    <h3>Debug Panel</h3>
-    <label for="slotWidth">Slot Width:</label>
-    <input type="number" id="slotWidth" value="700" />px<br>
-    <label for="slotHeight">Slot Height:</label>
-    <input type="number" id="slotHeight" value="480" />px<br>
-    <label for="reelWidth">Reel Width:</label>
-    <input type="number" id="reelWidth" value="100" />px<br>
-    <label for="reelHeight">Reel Height:</label>
-    <input type="number" id="reelHeight" value="220" />px<br>
-    <button id="updateDebug">Update</button>
-  </div>
+    <div class="controls">
+        <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
+        <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
+        <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
+        <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
+        <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-  <script src="/js/wallet.js"></script>
-  <script src="/js/paid-game.js"></script>
-  <script>
-    // Debug panel logic to adjust CSS variables
-    document.getElementById("updateDebug").addEventListener("click", () => {
-      const slotWidth = document.getElementById("slotWidth").value + "px";
-      const slotHeight = document.getElementById("slotHeight").value + "px";
-      const reelWidth = document.getElementById("reelWidth").value + "px";
-      const reelHeight = document.getElementById("reelHeight").value + "px";
-      document.documentElement.style.setProperty("--slot-machine-width", slotWidth);
-      document.documentElement.style.setProperty("--slot-machine-height", slotHeight);
-      document.documentElement.style.setProperty("--reel-width", reelWidth);
-      document.documentElement.style.setProperty("--reel-height", reelHeight);
-    });
-  </script>
+    <div class="bottom-controls">
+        <button id="spinBtn" class="spinBtn" disabled>🎯 SPIN</button>
+        <button id="cashOutBtn" class="spinBtn">💵 CASH OUT</button>
+    </div>
+
+    <div id="debugger" style="margin-top: 20px;">
+        <button onclick="moveReels('up')">Move Reels Up</button>
+        <button onclick="moveReels('down')">Move Reels Down</button>
+        <button onclick="moveReels('left')">Move Reels Left</button>
+        <button onclick="moveReels('right')">Move Reels Right</button>
+        <button onclick="moveMachine('up')">Move Machine Up</button>
+        <button onclick="moveMachine('down')">Move Machine Down</button>
+        <button onclick="moveMachine('left')">Move Machine Left</button>
+        <button onclick="moveMachine('right')">Move Machine Right</button>
+    </div>
+
+    <script>
+        function moveReels(direction) {
+            const container = document.querySelector('.reel-container');
+            adjustPosition(container, direction);
+        }
+
+        function moveMachine(direction) {
+            const machine = document.getElementById('slot-machine');
+            adjustPosition(machine, direction);
+        }
+
+        function adjustPosition(element, direction) {
+            const step = 10; // pixels
+            const style = window.getComputedStyle(element);
+            let top = parseInt(style.top, 10);
+            let left = parseInt(style.left, 10);
+
+            switch (direction) {
+                case 'up': top -= step; break;
+                case 'down': top += step; break;
+                case 'left': left -= step; break;
+                case 'right': left += step; break;
+            }
+
+            element.style.top = `${top}px`;
+            element.style.left = `${left}px`;
+        }
+    </script>
 </body>
 </html>
