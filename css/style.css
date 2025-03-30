@@ -1,90 +1,309 @@
-/* General Page Styles */
+/* ====================================
+   Global Styles & Reset
+==================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-    font-family: 'Arial', sans-serif;
-    background: #f4f4f4;
-    margin: 0;
-    padding: 20px;
-    color: #333;
+  font-family: 'Orbitron', sans-serif;
+  background: #000;
+  color: #00ff66;
+  text-align: center;
+  line-height: 1.6;
+  padding-bottom: 40px;
 }
 
+/* ====================================
+   Header & Navigation
+==================================== */
 header {
-    background: #007BFF;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
+  background: #111;
+  padding: 15px 0;
+  border-bottom: 2px solid #00ff66;
 }
 
-nav a {
-    color: white;
-    padding: 0 15px;
-    text-decoration: none;
+.nav {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 0;
 }
 
-/* Slot Machine Specific Styles */
+.nav li a {
+  color: #00ff66;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.nav li a:hover {
+  color: #fff;
+  text-shadow: 0 0 10px #00ff66;
+}
+
+/* ====================================
+   Slot Machine (Free Version)
+   (Keep these dimensions & positions)
+==================================== */
 #slot-machine {
-    width: 811px; /* Width of your slot machine background */
-    height: 599px; /* Height of your slot machine background */
-    background-image: url('/assets/slotmachineidea.png');
-    background-size: cover;
-    margin: 217px auto;
-    position: relative;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  position: relative;
+  width: 600px;
+  height: 450px; /* Increased height slightly */
+  margin: 40px auto 20px auto;
+  background-image: url("/assets/slotmachine.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 30px;
 }
 
 .reel-container {
-    display: flex;
-    justify-content: space-around;
-    position: absolute;
-    top: 152px; /* Adjusted for visual alignment */
-    left: 99px; /* Adjusted for visual alignment */
-    width: 679px; /* Adjusted to space out reels evenly */
-    border: thick;
+  position: absolute;
+  top: 150px;
+  left: 135px;
+  width: 330px;
+  height: 100px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .reel {
-    width: 97px; /* Width of each reel adjusted */
-    height: 202px; /* Height of each reel adjusted */
-    background-color: #000000a1;
-    border-radius: 0px;
-    overflow: unset;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 110px;
+  height: 220px;
+  background: #000;
+  border: 2px solid #00ff66;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .reel img {
-    width: 147%; /* Make sure the image covers the reel */
-    height: auto;
+  width: 109px;
+  height: 90px;
+  object-fit: cover;
 }
+
+/* Spinning animation for reels */
+.reel img.spinning {
+  animation: spinEffect 0.5s ease-in-out infinite;
+}
+
+@keyframes spinEffect {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(180deg); }
+  100% { transform: rotateX(360deg); }
+}
+
+/* ====================================
+   Controls & Bet Chips
+==================================== */
 .controls {
-    text-align: center;
-    padding-top: 20px;
+  margin-top: 20px;
+}
+
+.bet-chips {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
 .bet {
-    background: #007BFF;
-    border: none;
-    padding: 10px 20px;
-    color: white;
-    border-radius: 5px;
-    margin-right: 5px;
-    cursor: pointer;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
 .bet img {
-    width: 50px; /* Icon size within the button */
+  width: 60px;
+  height: auto;
 }
 
-.spinBtn {
-    background: #28a745;
-    color: white;
-    border: none;
+.bet:hover {
+  transform: scale(1.1);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+#spinBtn {
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #00ff66, #00cc55);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 10px #00ff66;
+  transition: transform 0.2s, background 0.3s;
+}
+
+#spinBtn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(to right, #00cc55, #00ff66);
+}
+
+/* Reset Button */
+#resetBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+#resetBtn img {
+  width: 100px;
+  transition: transform 0.2s;
+}
+
+#resetBtn img:hover {
+  transform: scale(1.05);
+}
+
+/* Credits Display */
+#totalCredits {
+  font-size: 1.5rem;
+  margin-top: 15px;
+  color: #00ff66;
+  text-shadow: 0 0 5px #00ff66;
+}
+
+/* ====================================
+   Paid Game Additional Styles
+   (For Buy MET Section, Conversion, etc.)
+==================================== */
+#buyMetSection {
+  margin: 40px auto;
+  padding: 20px;
+  border-top: 1px solid #00ff66;
+  max-width: 600px;
+}
+
+#buyMetSection h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+#buyMetSection p {
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+#buyMetSection input {
+  padding: 10px;
+  font-size: 1rem;
+  width: 150px;
+  margin: 5px;
+  border: 1px solid #00ff66;
+  border-radius: 5px;
+  background: #000;
+  color: #00ff66;
+}
+
+#buyMetSection button {
+  padding: 10px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background: #00ff66;
+  color: #000;
+  margin-top: 10px;
+  transition: background 0.3s;
+}
+
+#buyMetSection button:hover {
+  background: #00cc55;
+}
+
+#metEstimate {
+  margin-top: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #00ff66;
+}
+
+/* ====================================
+   Forms (Contact, Admin, etc.)
+==================================== */
+form {
+  max-width: 500px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input, textarea {
+  padding: 10px;
+  border: 1px solid #00ff66;
+  border-radius: 5px;
+  background: #000;
+  color: #00ff66;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background: #00ff66;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #00cc55;
+}
+
+/* ====================================
+   Footer
+==================================== */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background: #111;
+  color: #00ff66;
+  font-size: 0.9rem;
+  border-top: 1px solid #00ff66;
+}
+
+/* ====================================
+   Responsive Adjustments
+==================================== */
+@media (max-width: 768px) {
+  #slot-machine {
+    width: 90%;
+    height: auto;
+  }
+  .reel-container {
+    left: 5%;
+    width: 90%;
+  }
+  .reel {
+    width: 80px;
+    height: 180px;
+  }
+  #spinBtn {
     padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.spinBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    font-size: 1rem;
+  }
+  .bet img {
+    width: 50px;
+  }
 }
