@@ -2,19 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Contact Us</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <h1>📬 Contact Us</h1>
-  <form id="contactForm">
-    <input type="text" id="nameInput" placeholder="Name" required />
-    <input type="email" id="emailInput" placeholder="Email" required />
-    <textarea id="messageInput" placeholder="Your message..." required></textarea>
-    <button type="submit">Send</button>
-  </form>
-
+  <header>
+    <nav>
+      <ul class="nav">
+        <li><a href="/index.html">Free Game</a></li>
+        <li><a href="/paid.html">Paid Game</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/instructions.html">How to Play</a></li>
+        <li><a href="/admin-login.html">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h1>Contact Us</h1>
+    <form id="contactForm">
+      <input type="text" id="nameInput" placeholder="Your Name" required />
+      <input type="email" id="emailInput" placeholder="Your Email" required />
+      <textarea id="messageInput" placeholder="Your Message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </main>
+  <footer>
+    <p>&copy; 2025 MET Slot Machine. All rights reserved.</p>
+  </footer>
   <script src="/js/contact.js"></script>
 </body>
 </html>
