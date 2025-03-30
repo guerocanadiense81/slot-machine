@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   betButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       currentBet = parseInt(btn.getAttribute("data-bet"));
-      console.log(`Bet set to ${currentBet}`);
+      console.log(`Current Bet: ${currentBet}`);
     });
   });
 
