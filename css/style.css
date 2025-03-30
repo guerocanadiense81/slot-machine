@@ -22,11 +22,11 @@ nav a {
 
 /* Slot Machine Specific Styles */
 #slot-machine {
-    width: 800px; /* Width of your slot machine background */
-    height: 600px; /* Height of your slot machine background */
+    width: 811px; /* Width of your slot machine background */
+    height: 599px; /* Height of your slot machine background */
     background-image: url('/assets/slotmachineidea.png');
     background-size: cover;
-    margin: 20px auto;
+    margin: 217px auto;
     position: relative;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
@@ -35,27 +35,27 @@ nav a {
     display: flex;
     justify-content: space-around;
     position: absolute;
-    top: 140px; /* Adjusted for visual alignment */
-    left: 125px; /* Adjusted for visual alignment */
-    width: 550px; /* Adjusted to space out reels evenly */
+    top: 152px; /* Adjusted for visual alignment */
+    left: 99px; /* Adjusted for visual alignment */
+    width: 679px; /* Adjusted to space out reels evenly */
+    border: thick;
 }
 
 .reel {
-    width: 90px; /* Width of each reel adjusted */
-    height: 180px; /* Height of each reel adjusted */
-    background-color: black;
-    border-radius: 10px;
-    overflow: hidden;
+    width: 97px; /* Width of each reel adjusted */
+    height: 202px; /* Height of each reel adjusted */
+    background-color: #000000a1;
+    border-radius: 0px;
+    overflow: unset;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .reel img {
-    width: 100%; /* Make sure the image covers the reel */
+    width: 147%; /* Make sure the image covers the reel */
     height: auto;
 }
-
 .controls {
     text-align: center;
     padding-top: 20px;
