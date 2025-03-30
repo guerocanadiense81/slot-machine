@@ -10,7 +10,88 @@
   <header>
     <nav>
       <ul class="nav">
+        <li><a hre<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paid Slot Machine</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- If you have additional paid version styling, you can also add: -->
+  <!-- <link rel="stylesheet" href="/css/paid.css" /> -->
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav">
         <li><a href="/index.html">Free Game</a></li>
+        <li><a href="/paid.html" class="active">Paid Game</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/instructions.html">How to Play</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="/admin-login.html">Admin</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <h1>🎰 Paid Slot Machine</h1>
+
+    <!-- Display current MET balance and wallet connect -->
+    <div class="points-tab">
+      <div class="point">Balance: <span id="metBalance">0</span> MET</div>
+      <div class="point"><button id="connectWallet">Connect Wallet</button></div>
+    </div>
+
+    <!-- Slot Machine Frame with 6 Reels -->
+    <section id="slot-machine">
+      <div class="reel-container">
+        <div class="reel"><img src="/assets/seven.png" alt="Reel 1" /></div>
+        <div class="reel"><img src="/assets/coins1.png" alt="Reel 2" /></div>
+        <div class="reel"><img src="/assets/crown.png" alt="Reel 3" /></div>
+        <div class="reel"><img src="/assets/goldbar.png" alt="Reel 4" /></div>
+        <div class="reel"><img src="/assets/key.png" alt="Reel 5" /></div>
+        <div class="reel"><img src="/assets/chest.png" alt="Reel 6" /></div>
+      </div>
+    </section>
+
+    <!-- Bet Controls -->
+    <div class="controls">
+      <div class="bet-chips">
+        <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
+        <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
+        <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
+        <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
+        <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
+      </div>
+
+      <div class="bottom-controls">
+        <button id="spinBtn" class="spinBtn" disabled>🎯 SPIN</button>
+        <button id="cashOutBtn" class="spinBtn">💵 CASH OUT</button>
+      </div>
+      <div id="totalCredits">Credits: 0</div>
+    </div>
+
+    <!-- Buy MET Section -->
+    <section id="buyMetSection">
+      <h2>🪙 Buy MET Tokens</h2>
+      <p>Enter amount in <strong>USD</strong> or <strong>BNB</strong>:</p>
+      <input type="number" id="usdAmount" placeholder="Enter USD" />
+      <input type="number" id="bnbAmount" placeholder="Or Enter BNB" />
+      <br /><br />
+      <button id="calculateMetBtn">Calculate</button>
+      <p id="metEstimate">Estimated: —</p>
+      <button id="buyNowBtn">Buy Now</button>
+    </section>
+  </main>
+
+  <!-- Load Web3 and our custom scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <script src="/js/wallet.js"></script>
+  <script src="/js/paid-game.js"></script>
+</body>
+</html>
+f="/index.html">Free Game</a></li>
         <li><a href="/paid.html" class="active">Paid Game</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/instructions.html">How to Play</a></li>
