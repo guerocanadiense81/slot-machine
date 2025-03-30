@@ -1,8 +1,8 @@
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
 let web3;
+let walletAddress;
 let tokenContract;
-let walletAddress = '';
 let credits = 0;
 let currentBet = 0;
 let winPercentage = 30;
@@ -10,23 +10,25 @@ let winPercentage = 30;
 const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
 const tokenABI = [
   {
-    "constant": true,
-    "inputs": [{ "name": "_owner", "type": "address" }],
-    "name": "balanceOf",
-    "outputs": [{ "name": "balance", "type": "uint256" }],
-    "type": "function"
+    constant: true,
+    inputs: [{ name: "_owner", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "balance", type: "uint256" }],
+    type: "function"
   }
 ];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // UI Elements
+  // DOM Elements
   const balanceDisplay = document.getElementById("metBalance");
   const spinBtn = document.getElementById("spinBtn");
   const betButtons = document.querySelectorAll(".bet");
   const reels = document.querySelectorAll(".reel img");
   const connectWalletBtn = document.getElementById("connectWallet");
   const cashOutBtn = document.getElementById("cashOutBtn");
+  const totalCreditsDisplay = document.getElementById("totalCredits");
 
+  // BUY Section
   const usdInput = document.getElementById("usdAmount");
   const bnbInput = document.getElementById("bnbAmount");
   const calculateBtn = document.getElementById("calculateMetBtn");
@@ -42,58 +44,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     "b1": 2
   };
 
-  // Initialize Web3
-  async function initWeb3() {
+  async function initWallet() {
     if (window.ethereum) {
       web3 = new Web3(window.ethereum);
-      const accounts = await web3.eth.requestAccounts();
-      walletAddress = accounts[0];
-      tokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
-      document.getElementById("walletAddress")?.innerText = `Wallet: ${walletAddress}`;
-      await fetchMETBalance();
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        walletAddress = accounts[0];
+        tokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
+        await fetchMETBalance();
+        spinBtn.disabled = false;
+      } catch (err) {
+        console.error("Wallet connect error", err);
+      }
     } else {
-      alert("MetaMask is required.");
+      alert("MetaMask required.");
     }
   }
 
-  // Fetch balance
   async function fetchMETBalance() {
+    if (!walletAddress || !tokenContract) return;
     try {
       const balanceWei = await tokenContract.methods.balanceOf(walletAddress).call();
       credits = parseFloat(web3.utils.fromWei(balanceWei, "ether"));
       updateCreditsDisplay();
-      spinBtn.disabled = false;
     } catch (err) {
-      console.error("Failed to fetch MET balance", err);
+      console.error("Error fetching MET balance:", err);
     }
   }
 
   function updateCreditsDisplay() {
-    document.getElementById("metBalance").innerText = `${credits.toFixed(2)} MET`;
-    document.getElementById("totalCredits").innerText = `Credits: ${credits.toFixed(2)}`;
+    if (balanceDisplay) balanceDisplay.textContent = `${credits.toFixed(2)} MET`;
+    if (totalCreditsDisplay) totalCreditsDisplay.textContent = `Credits: ${credits.toFixed(2)}`;
   }
 
-  connectWalletBtn?.addEventListener("click", initWeb3);
+  async function fetchWinPercent() {
+    try {
+      const res = await fetch(`${API_URL}/api/get-win-percentages`);
+      const data = await res.json();
+      winPercentage = data.paid || 30;
+    } catch (err) {
+      console.error("Win % fetch error:", err);
+    }
+  }
 
-  // Get Win Percentage
-  fetch(`${API_URL}/api/get-win-percentages`)
-    .then(res => res.json())
-    .then(data => winPercentage = data.paid)
-    .catch(err => console.error("Failed to fetch win %", err));
-
-  // Bet Buttons
-  const betValues = [1, 5, 10, 50, 100, 1000];
-  betButtons.forEach((button, i) => {
-    button.addEventListener("click", () => {
-      currentBet = betValues[i];
-      console.log(`Selected bet: ${currentBet} MET`);
-    });
-  });
-
-  // SPIN Function
-  spinBtn.addEventListener("click", async () => {
-    if (credits < currentBet || currentBet <= 0) {
-      alert("Insufficient credits or no bet selected.");
+  async function spinReels() {
+    if (!walletAddress || credits < currentBet || currentBet <= 0) {
+      alert("Not enough MET or no bet selected!");
       return;
     }
 
@@ -103,18 +99,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const result = [];
     const symbols = ["b1.png", "b2.png", "b3.png", "ch.png", "s7.png", "sc.png"];
 
-    reels.forEach((reel, i) => {
+    reels.forEach((reel, idx) => {
       setTimeout(() => {
         const symbol = symbols[Math.floor(Math.random() * symbols.length)];
         reel.src = `/assets/${symbol}`;
-        result[i] = symbol;
-      }, i * 200);
+        result[idx] = symbol;
+      }, idx * 200);
     });
 
     setTimeout(async () => {
-      const allSame = result[0] === result[1] && result[1] === result[2];
-
-      if (allSame) {
+      if (result[0] === result[1] && result[1] === result[2]) {
         const basePayout = payouts[result[0]] || 1;
         const winAmount = currentBet * basePayout * (winPercentage / 100);
         credits += winAmount;
@@ -133,80 +127,98 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
       }
 
-      fetchMETBalance();
+      await fetchMETBalance();
     }, 1000);
-  });
+  }
 
-  // CASH OUT
-  cashOutBtn?.addEventListener("click", async () => {
-    const data = { walletAddress, credits };
+  // EVENTS
+  if (connectWalletBtn) connectWalletBtn.addEventListener("click", initWallet);
+  if (spinBtn) spinBtn.addEventListener("click", spinReels);
 
-    fetch(`${API_URL}/api/settle-session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          alert("Cash out complete.");
-          fetchMETBalance();
-        } else {
-          alert("Cash out failed.");
-        }
+  if (cashOutBtn) {
+    cashOutBtn.addEventListener("click", async () => {
+      const payload = { walletAddress, credits };
+      const res = await fetch(`${API_URL}/api/settle-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-  });
-
-  // --- BUY MET TOKENS ---
-  let latestBNBPrice = 0;
-
-  calculateBtn.addEventListener("click", async () => {
-    const usdVal = parseFloat(usdInput.value);
-    const bnbVal = parseFloat(bnbInput.value);
-
-    try {
-      const res = await fetch(`${API_URL}/api/get-bnb-price`);
-      const data = await res.json();
-      latestBNBPrice = data.bnbPrice;
-
-      let usdAmount, bnbAmount;
-
-      if (usdVal > 0) {
-        usdAmount = usdVal;
-        bnbAmount = usdAmount / latestBNBPrice;
-      } else if (bnbVal > 0) {
-        bnbAmount = bnbVal;
-        usdAmount = bnbVal * latestBNBPrice;
+      const result = await res.json();
+      if (result.success) {
+        alert("Session cashed out!");
+        await fetchMETBalance();
       } else {
-        alert("Enter a valid USD or BNB value.");
-        return;
+        alert("Cash out failed.");
       }
+    });
+  }
 
-      const metTokens = usdAmount;
-      outputLabel.textContent = `You'll get ${metTokens.toFixed(2)} MET\n= ${bnbAmount.toFixed(4)} BNB\n= $${usdAmount.toFixed(2)}`;
-      buyBtn.setAttribute("data-bnb", bnbAmount.toString());
-      buyBtn.setAttribute("data-met", metTokens.toString());
-    } catch (err) {
-      console.error("Error fetching BNB price:", err);
-    }
+  // Bet buttons
+  const betValues = [1, 5, 10, 50, 100, 1000];
+  betButtons.forEach((button, i) => {
+    button.addEventListener("click", () => {
+      currentBet = betValues[i];
+      console.log("Selected Bet:", currentBet);
+    });
   });
 
-  buyBtn.addEventListener("click", async () => {
-    const accounts = await web3.eth.getAccounts();
-    const buyer = accounts[0];
-    const bnbAmount = buyBtn.getAttribute("data-bnb");
+  // BUY MET - Conversion + Transaction
+  if (calculateBtn) {
+    calculateBtn.addEventListener("click", async () => {
+      const usdVal = parseFloat(usdInput.value);
+      const bnbVal = parseFloat(bnbInput.value);
 
-    try {
-      await web3.eth.sendTransaction({
-        from: buyer,
-        to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6", // MET wallet
-        value: web3.utils.toWei(bnbAmount, "ether")
-      });
-      alert("Transaction sent. MET will arrive shortly.");
-      fetchMETBalance();
-    } catch (err) {
-      console.error("Purchase error:", err);
-      alert("Transaction failed.");
-    }
-  });
+      try {
+        const res = await fetch(`${API_URL}/api/get-bnb-price`);
+        const data = await res.json();
+        const bnbPrice = data.bnbPrice;
+
+        let usdAmount = 0;
+        let bnbAmount = 0;
+
+        if (usdVal > 0) {
+          usdAmount = usdVal;
+          bnbAmount = usdVal / bnbPrice;
+        } else if (bnbVal > 0) {
+          bnbAmount = bnbVal;
+          usdAmount = bnbVal * bnbPrice;
+        } else {
+          alert("Enter valid USD or BNB amount.");
+          return;
+        }
+
+        const metTokens = usdAmount;
+        outputLabel.textContent = `You'll get ${metTokens} MET = ${bnbAmount.toFixed(4)} BNB = $${usdAmount.toFixed(2)}`;
+
+        buyBtn.setAttribute("data-bnb", bnbAmount.toFixed(6));
+        buyBtn.setAttribute("data-met", metTokens.toFixed(2));
+      } catch (err) {
+        console.error("Conversion error:", err);
+        outputLabel.textContent = "Error getting price.";
+      }
+    });
+  }
+
+  if (buyBtn) {
+    buyBtn.addEventListener("click", async () => {
+      const bnbAmount = buyBtn.getAttribute("data-bnb");
+      if (!walletAddress || !bnbAmount) return;
+
+      try {
+        await web3.eth.sendTransaction({
+          from: walletAddress,
+          to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6",
+          value: web3.utils.toWei(bnbAmount, "ether")
+        });
+        alert("Transaction sent. MET will be delivered shortly.");
+        await fetchMETBalance();
+      } catch (err) {
+        console.error("Transaction failed:", err);
+        alert("Transaction failed.");
+      }
+    });
+  }
+
+  // Init win % on load
+  await fetchWinPercent();
 });
