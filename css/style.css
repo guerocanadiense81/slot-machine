@@ -11,7 +11,7 @@
   width: var(--slot-machine-width);
   height: var(--slot-machine-height);
   margin: 0 auto;
-  background-image: url("/assets/slotmachine.png");
+  background-image: url("/assets/slotmachineidea.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
