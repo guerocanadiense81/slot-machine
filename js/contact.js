@@ -1,38 +1,30 @@
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
 document.addEventListener("DOMContentLoaded", () => {
-  const contactForm = document.getElementById("contactForm");
-  if (!contactForm) return;
+  const form = document.getElementById("contactForm");
+  if (!form) return;
 
-  contactForm.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById("nameInput").value.trim();
-    const email = document.getElementById("emailInput").value.trim();
-    const message = document.getElementById("messageInput").value.trim();
+    const name = document.getElementById("nameInput").value;
+    const email = document.getElementById("emailInput").value;
+    const message = document.getElementById("messageInput").value;
 
-    if (!name || !email || !message) {
-      alert("Please fill out all fields.");
-      return;
-    }
+    const payload = { name, email, message };
 
-    try {
-      const res = await fetch(`${API_URL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
-      });
+    const res = await fetch(`${API_URL}/api/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-      const result = await res.json();
-      if (result.success) {
-        alert("Message sent!");
-        contactForm.reset();
-      } else {
-        alert("Error: " + result.error);
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      alert("Failed to send. Try again.");
+    const data = await res.json();
+    if (data.success) {
+      alert("Message sent!");
+      form.reset();
+    } else {
+      alert("Failed to send message.");
     }
   });
 });
