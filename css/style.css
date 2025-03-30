@@ -50,47 +50,56 @@ header {
    Slot Machine (Free Version)
    (Keep these dimensions & positions)
 ==================================== */
+/* Slot Machine Specific Styles */
 #slot-machine {
-  position: relative;
-  width: 600px;
-  height: 450px; /* Increased height slightly */
-  margin: 40px auto 20px auto;
-  background-image: url("/assets/slotmachine.png");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 30px;
+    width: 811px; /* Width of your slot machine background */
+    height: 599px; /* Height of your slot machine background */
+    background-image: url('/assets/slotmachineidea.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 217px auto;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(128, 0, 128, 0.3); /* Purple-toned shadow */
 }
 
 .reel-container {
-  position: absolute;
-  top: 150px;
-  left: 135px;
-  width: 330px;
-  height: 100px;
-  display: flex;
-  justify-content: space-between;
+    display: flex;
+    justify-content: space-around;
+    position: absolute;
+    top: 152px; /* Adjusted for visual alignment */
+    left: 99px; /* Adjusted for visual alignment */
+    width: 679px; /* Adjusted to space out reels evenly */
+    border: 2px solid rgba(128, 0, 128, 0.5); /* Subtle purple border */
+    border-radius: 10px;
 }
 
 .reel {
-  width: 110px;
-  height: 220px;
-  background: #000;
-  border: 2px solid #00ff66;
-  border-radius: 10px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    width: 97px; /* Width of each reel adjusted */
+    height: 202px; /* Height of each reel adjusted */
+    background-color: rgba(20, 0, 40, 0.8); /* Dark purple background */
+    border-radius: 8px;
+    overflow: hidden; /* Hide overflow for clean look */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .reel img {
-  width: 109px;
-  height: 90px;
-  object-fit: cover;
+    width: 147%; /* Ensures the image covers the reel area */
+    height: auto;
+    transition: transform 0.5s ease-in-out;
+}
+
+/* Spinning animation for reels */
+.reel img.spinning {
+    animation: spinEffect 0.5s linear infinite;
+}
+
+@keyframes spinEffect {
+    0%   { transform: rotateX(0deg); }
+    50%  { transform: rotateX(180deg); }
+    100% { transform: rotateX(360deg); }
 }
 
 /* Spinning animation for reels */
