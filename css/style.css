@@ -1,42 +1,90 @@
+/* General Page Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+header {
+    background: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    padding: 0 15px;
+    text-decoration: none;
+}
+
+/* Slot Machine Specific Styles */
+#slot-machine {
+    width: 800px; /* Width of your slot machine background */
+    height: 600px; /* Height of your slot machine background */
+    background-image: url('/assets/slotmachineidea.png');
+    background-size: cover;
+    margin: 20px auto;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
 .reel-container {
     display: flex;
-    justify-content: space-between;
-    margin: 0 auto;
-    width: 100%; /* Full width to accommodate 6 reels */
-    padding: 20px 0; /* Padding for visual spacing */
+    justify-content: space-around;
+    position: absolute;
+    top: 140px; /* Adjusted for visual alignment */
+    left: 125px; /* Adjusted for visual alignment */
+    width: 550px; /* Adjusted to space out reels evenly */
 }
 
 .reel {
-    flex: 1;
-    text-align: center; /* Center the images within the reels */
-    padding: 0 10px; /* Spacing between reels */
-}
-
-.controls, .bottom-controls {
+    width: 90px; /* Width of each reel adjusted */
+    height: 180px; /* Height of each reel adjusted */
+    background-color: black;
+    border-radius: 10px;
+    overflow: hidden;
     display: flex;
+    align-items: center;
     justify-content: center;
-    margin-top: 20px; /* Space above control buttons */
 }
 
-.controls button, .bottom-controls button {
-    margin: 0 5px; /* Space between buttons */
-}
-
-/* Specific to the betting chips */
-.controls img, .bottom-controls img {
-    width: 50px; /* Adjust size as needed */
+.reel img {
+    width: 100%; /* Make sure the image covers the reel */
     height: auto;
 }
 
-/* Navigation styling */
-nav a {
-    padding: 10px;
-    text-decoration: none;
-    color: white; /* Adjust as needed */
-    background: grey; /* Background color for navigation */
+.controls {
+    text-align: center;
+    padding-top: 20px;
 }
 
-nav a.active {
-    color: yellow; /* Active link color */
-    background: darkgrey; /* Active link background */
+.bet {
+    background: #007BFF;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 5px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.bet img {
+    width: 50px; /* Icon size within the button */
+}
+
+.spinBtn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.spinBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
