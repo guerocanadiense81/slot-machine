@@ -54,13 +54,12 @@ h1 {
 /* Reel Container (Inside the Machine) */
 .reel-container {
   position: absolute;
-  top: 150px;
-  left: 45px; /* Adjusted for 6 reels */
+  top: 120px;
+  left: 74px; /* Adjusted for 6 reels */
   width: 610px; /* Enough for 6 reels (6 * ~100px + gap) */
   height: 100px;
   display: flex;
-  justify-content: space-between;
-  gap: 5px;
+  gap: 0px;
 }
 
 /* Individual Reel Slots */
