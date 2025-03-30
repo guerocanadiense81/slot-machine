@@ -2,78 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paid Slot Machine</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <header>
     <nav>
       <ul class="nav">
-        <li><a href="index.html">Free Game</a></li>
-        <li><a href="paid.html" class="active">Paid Game</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="instructions.html">How to Play</a></li>
-        <li><a href="contact.html">Contact</a></li>
-        <li><a href="admin-login.html">Admin</a></li>
+        <li><a href="/index.html">Free Game</a></li>
+        <li><a href="/paid.html">Paid Game</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/instructions.html">How to Play</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="/admin-login.html">Admin</a></li>
       </ul>
     </nav>
   </header>
 
-  <main>
-    <h1>Paid Slot Machine</h1>
-
-    <!-- Container for the slot machine background + reels -->
+  <main class="main-container">
+    <h1>🎰 Paid Slot Machine</h1>
+    
+    <!-- Points / Wallet Info -->
+    <div class="points-tab">
+      <div class="point">Balance: <span id="metBalance">0</span> MET</div>
+      <div class="point"><button id="connectWallet">Connect Wallet</button></div>
+    </div>
+    
+    <!-- Slot Machine Area -->
     <div id="slot-machine">
-      <!-- The background image is set via CSS, but you can also place an <img> if you prefer -->
-      <!-- If you'd rather do <img src="assets/slotmachineidea.png" /> that’s fine, just adjust the CSS accordingly -->
-
       <div class="reel-container">
-        <!-- 6 reels, bigger images -->
-        <div class="reel"><img src="/assets/seven.png" alt="Reel" /></div>
-        <div class="reel"><img src="/assets/coins1.png" alt="Reel" /></div>
-        <div class="reel"><img src="/assets/crown.png" alt="Reel" /></div>
-        <div class="reel"><img src="/assets/goldbar.png" alt="Reel" /></div>
-        <div class="reel"><img src="/assets/key.png" alt="Reel" /></div>
-        <div class="reel"><img src="/assets/chest.png" alt="Reel" /></div>
+        <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/coins1.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/crown.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/goldbar.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/key.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/chest.png" alt="reel" /></div>
       </div>
     </div>
-
-    <!-- Bet Buttons (Remove the 1000 MET) -->
-    <div class="controls">
-      <button class="bet"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
-      <button class="bet"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
-      <button class="bet"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
-      <button class="bet"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
-      <button class="bet"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
+    
+    <!-- Bet Buttons (without the 1000 MET option) -->
+    <div class="bet-chips">
+      <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
+      <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
+      <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
+      <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
+      <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
     </div>
-
+    
+    <!-- Bottom Controls -->
     <div class="bottom-controls">
-      <button id="spinBtn" class="spinBtn">SPIN</button>
+      <button id="spinBtn" class="spinBtn" disabled>🎲 SPIN</button>
+      <!-- Reset button removed on paid version -->
+      <button id="cashOutBtn" class="spinBtn">💵 CASH OUT</button>
     </div>
-
-    <!-- Display credits in MET -->
-    <p id="metBalance">0 MET</p>
-    <p id="totalCredits">Credits: 0</p>
-
-    <!-- Connect wallet button -->
-    <button id="connectWallet">Connect Wallet</button>
-
-    <!-- Buy MET Section -->
+    
+    <!-- Credits Display -->
+    <div id="totalCredits">Credits: 0</div>
+    
+    <!-- Buy MET Tokens Section -->
     <section id="buyMetSection">
-      <h3>Enter either USD or BNB</h3>
-      <div>
-        <input type="number" id="usdAmount" placeholder="Enter USD" step="0.01" />
-        <span>or</span>
-        <input type="number" id="bnbAmount" placeholder="Enter BNB" step="0.0001" />
-      </div>
+      <h2>🪙 Buy MET Tokens</h2>
+      <p>Enter USD or BNB amount:</p>
+      <input type="number" id="usdAmount" placeholder="Enter USD" />
+      <input type="number" id="bnbAmount" placeholder="Or Enter BNB" />
+      <br /><br />
       <button id="calculateMetBtn">Calculate</button>
-      <p id="metEstimate">Estimated: --</p>
+      <p id="metEstimate">Estimated: —</p>
       <button id="buyNowBtn">Buy Now</button>
     </section>
+    
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <script src="/js/wallet.js"></script>
+    <script src="/js/paid-game.js"></script>
   </main>
 
-  <!-- Link to the final paid-game.js with 6-reel logic -->
-  <script src="/js/paid-game.js"></script>
+  <footer>
+    <p>&copy; 2025 MET Slot Machine. All rights reserved.</p>
+    <p>
+      <a href="https://twitter.com/yourprofile" target="_blank">Twitter</a> | 
+      <a href="https://facebook.com/yourprofile" target="_blank">Facebook</a> | 
+      <a href="https://instagram.com/yourprofile" target="_blank">Instagram</a>
+    </p>
+  </footer>
 </body>
 </html>
