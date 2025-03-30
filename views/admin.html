@@ -3,80 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>A<!-- /frontend/admin.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
   <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="container">
-    <h1>🎛️ Admin Dashboard</h1>
-
-    <div class="section">
-      <h2>📊 Player Wallets & Credits</h2>
-      <table id="walletTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Wallet</th>
-            <th>Credits</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button id="exportCSV">📁 Export CSV</button>
-    </div>
-
-    <div class="section">
-      <h2>🎁 Send Bonus Credits</h2>
-      <input type="text" id="bonusWallet" placeholder="Wallet address">
-      <input type="number" id="bonusAmount" placeholder="Amount">
-      <button id="sendBonus">➕ Send Bonus</button>
-    </div>
-  </div>
-
-  <script src="js/admin.js"></script>
-</body>
-</html>
-dmin Dashboard</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/index.html">Free Game</a>
-      <a href="/paid.html">Paid Game</a>
-      <a href="/admin.html">Admin</a>
-    </nav>
-  </header>
-
-  <h1>Admin Dashboard 🎛️</h1>
+  <h1>🛠️ Admin Dashboard</h1>
 
   <section>
-    <h2>Set Win Percentages</h2>
-    <label>Free Game %: <input type="number" id="freeWinPercent" value="30" /></label>
-    <label>Paid Game %: <input type="number" id="paidWinPercent" value="30" /></label>
-    <button id="updateWinBtn">Update</button>
-  </section>
-
-  <section>
-    <h2>📊 Player Balances</h2>
-    <div id="playerList">Loading...</div>
-  </section>
-
-  <section>
-    <h2>🎁 Send Bonus</h2>
-    <input type="text" id="bonusWallet" placeholder="Wallet address" />
+    <h2>🎁 Send Bonus MET</h2>
+    <input type="text" id="bonusWallet" placeholder="Enter Wallet Address" />
     <input type="number" id="bonusAmount" placeholder="Amount in MET" />
     <button id="sendBonusBtn">Send Bonus</button>
   </section>
 
   <section>
-    <h2>📁 Export Logs</h2>
-    <a href="/logs/transactions.log" target="_blank">Download Logs</a>
+    <h2>📊 Player Balances</h2>
+    <div id="walletList"></div>
+    <button id="refreshBtn">🔄 Refresh</button>
+    <button id="exportCSVBtn">📄 Export CSV</button>
   </section>
 
   <script src="/js/admin.js"></script>
