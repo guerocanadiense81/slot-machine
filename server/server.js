@@ -4,7 +4,7 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
-const { Web3 } = require("web3");
+const Web3 = require('web3');
 const winston = require("winston");
 
 const app = express();
