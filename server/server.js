@@ -18,7 +18,7 @@ app.use(express.static(path.join(__dirname, "../js")));
 const tokenABI = require("../abi/METToken.json");
 
 // Web3 + Contract Setup
-const web3 = new Web3(new Web3.providers.HttpProvider(process.env.BSC_RPC_URL));
+const web3 = new Web3(process.env.BSC_RPC_URL);
 const contract = new web3.eth.Contract(tokenABI, process.env.MET_CONTRACT_ADDRESS);
 const houseWallet = process.env.HOUSE_WALLET;
 const privateKey = process.env.PRIVATE_KEY;
