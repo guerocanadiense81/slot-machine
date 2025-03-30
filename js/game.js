@@ -1,18 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
   let credits = 10;
+  let currentBet = 1;
+
   const spinBtn = document.getElementById("spinBtn");
   const totalCredits = document.getElementById("totalCredits");
   const reels = document.querySelectorAll(".reel img");
   const betButtons = document.querySelectorAll(".bet");
-  const symbols = ["seven.png", "coins1.png", "crown.png", "goldbar.png"];
 
-  let currentBet = 1;
+  const symbols = [
+    "seven.png",
+    "coins1.png",
+    "crown.png",
+    "goldbar.png"
+  ];
 
   function updateCredits() {
     totalCredits.textContent = `Credits: ${credits}`;
   }
 
-  spinBtn.addEventListener("click", () => {
+  function spinReels() {
     if (credits < currentBet) {
       alert("Not enough credits.");
       return;
@@ -22,23 +28,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = [];
 
     reels.forEach((reel, i) => {
+      reel.classList.add("spinning"); // animation class
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      reel.src = `/assets/${symbol}`;
-      result.push(symbol);
+      setTimeout(() => {
+        reel.src = `/assets/${symbol}`;
+        reel.classList.remove("spinning");
+        result[i] = symbol;
+      }, i * 200);
     });
 
-    if (result[0] === result[1] && result[1] === result[2]) {
-      const payout = currentBet * 10;
-      credits += payout;
-      alert(`You win ${payout} credits!`);
-    }
+    setTimeout(() => {
+      if (result[0] === result[1] && result[1] === result[2]) {
+        const payout = currentBet * 10;
+        credits += payout;
+        alert(`🎉 You win ${payout} credits!`);
+      }
+      updateCredits();
+    }, 700);
+  }
 
-    updateCredits();
-  });
+  // Spin button event
+  spinBtn.addEventListener("click", spinReels);
 
+  // Bet button event
   betButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      currentBet = parseInt(btn.textContent);
+      const betValue = parseInt(btn.textContent);
+      if (!isNaN(betValue)) {
+        currentBet = betValue;
+        console.log(`Current Bet: ${currentBet}`);
+      }
     });
   });
 
