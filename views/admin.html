@@ -11,40 +11,35 @@
     <nav>
       <a href="/index.html">Free Game</a>
       <a href="/paid.html">Paid Game</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">How to Play</a>
-      <a href="/contact.html">Contact</a>
-      <a href="/admin-login.html">Logout</a>
+      <a href="/admin.html">Admin</a>
     </nav>
   </header>
 
-  <main class="admin-dashboard">
-    <h1>⚙️ Admin Dashboard</h1>
+  <h1>Admin Dashboard 🎛️</h1>
 
-    <section class="win-percent-section">
-      <h2>🎯 Win Percentages</h2>
-      <p>Current Paid Win %: <strong id="paidWinCurrent">Loading...</strong></p>
-      <p>Current Free Win %: <strong id="freeWinCurrent">Loading...</strong></p>
+  <section>
+    <h2>Set Win Percentages</h2>
+    <label>Free Game %: <input type="number" id="freeWinPercent" value="30" /></label>
+    <label>Paid Game %: <input type="number" id="paidWinPercent" value="30" /></label>
+    <button id="updateWinBtn">Update</button>
+  </section>
 
-      <label for="paidWinPercent">Update Paid Win %</label>
-      <input type="number" id="paidWinPercent" min="0" max="100" />
+  <section>
+    <h2>📊 Player Balances</h2>
+    <div id="playerList">Loading...</div>
+  </section>
 
-      <label for="freeWinPercent">Update Free Win %</label>
-      <input type="number" id="freeWinPercent" min="0" max="100" />
+  <section>
+    <h2>🎁 Send Bonus</h2>
+    <input type="text" id="bonusWallet" placeholder="Wallet address" />
+    <input type="number" id="bonusAmount" placeholder="Amount in MET" />
+    <button id="sendBonusBtn">Send Bonus</button>
+  </section>
 
-      <button id="updateWinBtn">Update Win %</button>
-      <p id="updateStatus" class="info-text"></p>
-    </section>
-
-    <section class="coming-soon">
-      <h2>🗞️ News & Airdrops</h2>
-      <p>More features like bonus logs, airdrop registration, and analytics will be added here soon.</p>
-    </section>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 MET Slot Machine | Built on BSC</p>
-  </footer>
+  <section>
+    <h2>📁 Export Logs</h2>
+    <a href="/logs/transactions.log" target="_blank">Download Logs</a>
+  </section>
 
   <script src="/js/admin.js"></script>
 </body>
