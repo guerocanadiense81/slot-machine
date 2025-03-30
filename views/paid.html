@@ -7,12 +7,11 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <!-- Header / Navigation -->
   <header>
     <nav>
       <ul class="nav">
         <li><a href="/index.html">Free Game</a></li>
-        <li><a href="/paid.html" class="active">Paid Game</a></li>
+        <li><a href="/paid.html">Paid Game</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/instructions.html">How to Play</a></li>
         <li><a href="/contact.html">Contact</a></li>
@@ -23,52 +22,45 @@
 
   <main class="main-container">
     <h1>🎰 Paid Slot Machine</h1>
-    <div class="points-tab">
-      <div class="point">Balance: <span id="metBalance">0 MET</span></div>
-      <div class="point"><button id="connectWallet">Connect Wallet</button></div>
+    
+    <!-- Slot Machine Frame -->
+    <div id="slot-machine">
+      <div class="reel-container">
+        <!-- 6 reels -->
+        <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/coins1.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/crown.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/goldbar.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/key.png" alt="reel" /></div>
+        <div class="reel"><img src="/assets/chest.png" alt="reel" /></div>
+      </div>
     </div>
 
-    <!-- Slot Machine Display -->
-    <section id="slot-machine">
-      <!-- Slot Machine Frame Background -->
-      <div id="slotFrame">
-        <img src="/assets/slotmachineidea.png" alt="Slot Machine Frame" />
-        <!-- Reel Container with 6 reels -->
-        <div class="reel-container">
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 1" /></div>
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 2" /></div>
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 3" /></div>
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 4" /></div>
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 5" /></div>
-          <div class="reel"><img src="/assets/seven.png" alt="Reel 6" /></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Bet Buttons (without the 1000 MET chip) -->
-    <section class="bet-chips">
+    <!-- Bet Chips -->
+    <div class="bet-chips">
       <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
       <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
       <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
       <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
       <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
-    </section>
+    </div>
 
-    <!-- Action Buttons (No Reset Button in Paid Version) -->
-    <section class="actions">
-      <button id="spinBtn">🎯 SPIN</button>
-      <button id="cashOutBtn">💵 CASH OUT</button>
-    </section>
+    <!-- Actions -->
+    <div class="actions">
+      <button id="spinBtn">🎲 Spin</button>
+      <!-- For the paid version, we remove the reset button -->
+      <button id="cashOutBtn">💵 Cash Out</button>
+    </div>
 
     <!-- Credits Display -->
     <div id="totalCredits">Credits: 0</div>
 
-    <!-- Buy MET Tokens Section -->
+    <!-- Buy MET Section -->
     <section id="buyMetSection">
       <h2>🪙 Buy MET Tokens</h2>
-      <p>Enter either <strong>USD</strong> or <strong>BNB</strong> amount:</p>
-      <input type="number" id="usdAmount" placeholder="USD Amount" />
-      <input type="number" id="bnbAmount" placeholder="BNB Amount" />
+      <p>Enter either <strong>USD</strong> or <strong>BNB</strong>:</p>
+      <input type="number" id="usdAmount" placeholder="Enter USD" />
+      <input type="number" id="bnbAmount" placeholder="Or Enter BNB" />
       <br /><br />
       <button id="calculateMetBtn">Calculate</button>
       <p id="metEstimate">Estimated: —</p>
@@ -76,9 +68,35 @@
     </section>
   </main>
 
-  <!-- Include Web3 and your JS scripts -->
+  <!-- Debug Panel (for adjusting sizes in real time) -->
+  <div id="debugger" style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #00ff66; padding: 10px; border-radius: 8px; z-index: 1000;">
+    <h3>Debug Panel</h3>
+    <label for="slotWidth">Slot Width:</label>
+    <input type="number" id="slotWidth" value="700" />px<br>
+    <label for="slotHeight">Slot Height:</label>
+    <input type="number" id="slotHeight" value="480" />px<br>
+    <label for="reelWidth">Reel Width:</label>
+    <input type="number" id="reelWidth" value="100" />px<br>
+    <label for="reelHeight">Reel Height:</label>
+    <input type="number" id="reelHeight" value="220" />px<br>
+    <button id="updateDebug">Update</button>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="/js/wallet.js"></script>
   <script src="/js/paid-game.js"></script>
+  <script>
+    // Debug panel logic to adjust CSS variables
+    document.getElementById("updateDebug").addEventListener("click", () => {
+      const slotWidth = document.getElementById("slotWidth").value + "px";
+      const slotHeight = document.getElementById("slotHeight").value + "px";
+      const reelWidth = document.getElementById("reelWidth").value + "px";
+      const reelHeight = document.getElementById("reelHeight").value + "px";
+      document.documentElement.style.setProperty("--slot-machine-width", slotWidth);
+      document.documentElement.style.setProperty("--slot-machine-height", slotHeight);
+      document.documentElement.style.setProperty("--reel-width", reelWidth);
+      document.documentElement.style.setProperty("--reel-height", reelHeight);
+    });
+  </script>
 </body>
 </html>
