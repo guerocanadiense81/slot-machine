@@ -1,130 +1,238 @@
-// /js/paid-game.js
 const API_URL = 'https://slot-machine-a08c.onrender.com';
 
-let web3, walletAddress, tokenContract, currentBet = 0, credits = 0;
+let web3;
+let walletAddress = "";
+let tokenContract;
+let credits = 0;
+let currentBet = 0;
+let winPercentage = 30; // This value could also be used to scale payouts if desired
+
+// The correct contract address for MET tokens
 const tokenAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
+// Minimal ABI to fetch balance
 const tokenABI = [
   {
-    constant: true,
-    inputs: [{ name: "_owner", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ name: "balance", type: "uint256" }],
-    type: "function"
+    "constant": true,
+    "inputs": [{ "name": "_owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "balance", "type": "uint256" }],
+    "type": "function"
   }
 ];
 
+// Symbols used for the reels (images in /assets/)
+const symbols = [
+  "seven.png",
+  "coins1.png",
+  "crown.png",
+  "goldbar.png",
+  "key.png",
+  "chest.png"
+];
+
+// Payout multipliers for maximum consecutive matching symbols
+// 3 in a row: x5, 4: x10, 5: x50, 6: x150
+const multipliers = {
+  3: 5,
+  4: 10,
+  5: 50,
+  6: 150
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
+  // DOM Elements
   const spinBtn = document.getElementById("spinBtn");
-  const reels = document.querySelectorAll(".reel img");
   const betButtons = document.querySelectorAll(".bet");
+  const reels = document.querySelectorAll(".reel img");
   const balanceDisplay = document.getElementById("metBalance");
   const totalCreditsDisplay = document.getElementById("totalCredits");
-  const connectBtn = document.getElementById("connectWallet");
+  const connectWalletBtn = document.getElementById("connectWallet");
+  const cashOutBtn = document.getElementById("cashOutBtn");
+
+  // Buy MET Section Elements
   const usdInput = document.getElementById("usdAmount");
   const bnbInput = document.getElementById("bnbAmount");
-  const estimateLabel = document.getElementById("metEstimate");
   const calculateBtn = document.getElementById("calculateMetBtn");
   const buyBtn = document.getElementById("buyNowBtn");
+  const outputLabel = document.getElementById("metEstimate");
 
-  const symbols = ["seven.png", "coins1.png", "chest.png", "crown.png", "goldbar.png", "bell.png", "key.png"];
-  const payouts = {
-    "seven.png": 150,
-    "coins1.png": 100,
-    "chest.png": 50,
-    "crown.png": 20,
-    "goldbar.png": 10,
-    "bell.png": 5,
-    "key.png": 2
-  };
+  // Initialize win percentage from backend (if needed)
+  async function fetchWinPercentage() {
+    try {
+      const res = await fetch(`${API_URL}/api/get-win-percentages`);
+      const data = await res.json();
+      winPercentage = data.paid || 30;
+    } catch (err) {
+      console.error("Error fetching win percentage:", err);
+    }
+  }
 
-  async function initWeb3() {
+  // Initialize Web3 and wallet connection
+  async function initWallet() {
     if (window.ethereum) {
       web3 = new Web3(window.ethereum);
-      const accounts = await web3.eth.requestAccounts();
-      walletAddress = accounts[0];
-      tokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
-      await fetchBalance();
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        walletAddress = accounts[0];
+        connectWalletBtn.textContent = walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+        tokenContract = new web3.eth.Contract(tokenABI, tokenAddress);
+        await fetchBalance();
+        spinBtn.disabled = false;
+      } catch (err) {
+        console.error("Wallet connection error:", err);
+      }
     } else {
       alert("Please install MetaMask!");
     }
   }
 
+  // Fetch off-chain MET balance from backend
   async function fetchBalance() {
-    const res = await fetch(`${API_URL}/api/balance?wallet=${walletAddress}`);
-    const data = await res.json();
-    credits = parseFloat(data.credits || 0);
+    try {
+      const res = await fetch(`${API_URL}/api/balance?wallet=${walletAddress}`);
+      const data = await res.json();
+      credits = parseFloat(data.credits || 0);
+      updateBalanceUI();
+    } catch (err) {
+      console.error("Error fetching balance:", err);
+    }
+  }
+
+  function updateBalanceUI() {
     balanceDisplay.textContent = `${credits.toFixed(2)} MET`;
     totalCreditsDisplay.textContent = `Credits: ${credits.toFixed(2)}`;
   }
 
-  connectBtn.addEventListener("click", initWeb3);
+  // Calculate maximum consecutive matching symbols (left-to-right)
+  function maxConsecutive(arr) {
+    let maxCount = 1, currentCount = 1;
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] === arr[i - 1]) {
+        currentCount++;
+      } else {
+        if (currentCount > maxCount) maxCount = currentCount;
+        currentCount = 1;
+      }
+    }
+    return Math.max(maxCount, currentCount);
+  }
 
-  betButtons.forEach((btn, idx) => {
-    const betValues = [1, 5, 10, 50, 100, 1000];
-    btn.addEventListener("click", () => {
-      currentBet = betValues[idx];
-    });
-  });
+  // Spin reels function with animation and new payout logic
+  async function spinReels() {
+    if (!walletAddress || currentBet <= 0 || credits < currentBet) {
+      alert("Connect your wallet and ensure sufficient credits.");
+      return;
+    }
 
-  spinBtn.addEventListener("click", async () => {
-    if (!walletAddress || credits < currentBet || currentBet <= 0) return alert("Not enough MET or no bet selected.");
+    // Deduct bet
+    credits -= currentBet;
+    updateBalanceUI();
 
     const result = [];
+    // Animate each reel and assign random symbol from the new set
     reels.forEach((reel, i) => {
       reel.classList.add("spinning");
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       setTimeout(() => {
+        const symbol = symbols[Math.floor(Math.random() * symbols.length)];
         reel.src = `/assets/${symbol}`;
         reel.classList.remove("spinning");
         result[i] = symbol;
       }, i * 200);
     });
 
-    await fetch(`${API_URL}/api/spin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: walletAddress, bet: currentBet, result })
-    });
+    // Wait for animations to complete
+    setTimeout(async () => {
+      // Determine maximum consecutive matching symbols
+      const consecutiveCount = maxConsecutive(result);
+      let winAmount = 0;
+      if (consecutiveCount >= 3 && multipliers[consecutiveCount]) {
+        winAmount = currentBet * multipliers[consecutiveCount];
+        credits += winAmount;
+        alert(`🎉 You win ${winAmount} MET! (${consecutiveCount} in a row)`);
+        // Record win on backend
+        await fetch(`${API_URL}/api/settle-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: walletAddress, credits: winAmount })
+        });
+      } else {
+        // Record loss on backend
+        await fetch(`${API_URL}/api/record-loss`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: walletAddress, amount: currentBet })
+        });
+      }
+      updateBalanceUI();
+      await fetchBalance();
+    }, 1000);
+  }
 
-    setTimeout(fetchBalance, 1000);
-  });
-
-  calculateBtn.addEventListener("click", async () => {
+  // Buy MET logic with conversion
+  async function calculateConversion() {
     const usdVal = parseFloat(usdInput.value);
     const bnbVal = parseFloat(bnbInput.value);
 
-    const res = await fetch(`${API_URL}/api/get-bnb-price`);
-    const { bnbPrice } = await res.json();
+    try {
+      const res = await fetch(`${API_URL}/api/get-bnb-price`);
+      const { bnbPrice } = await res.json();
 
-    let usd = usdVal, bnb = bnbVal;
-    if (usdVal > 0) bnb = usdVal / bnbPrice;
-    else if (bnbVal > 0) usd = bnbVal * bnbPrice;
-    else return alert("Enter USD or BNB");
+      let usdAmount = usdVal > 0 ? usdVal : bnbVal * bnbPrice;
+      let bnbAmount = usdVal > 0 ? usdVal / bnbPrice : bnbVal;
 
-    estimateLabel.textContent = `Buy ${usd.toFixed(2)} MET = ${bnb.toFixed(4)} BNB`;
-    buyBtn.setAttribute("data-usd", usd.toFixed(2));
-    buyBtn.setAttribute("data-bnb", bnb.toFixed(6));
-  });
+      outputLabel.textContent = `Buy ${usdAmount.toFixed(2)} MET = ${bnbAmount.toFixed(4)} BNB = $${usdAmount.toFixed(2)}`;
+      buyBtn.setAttribute("data-usd", usdAmount.toFixed(2));
+      buyBtn.setAttribute("data-bnb", bnbAmount.toFixed(6));
+    } catch (err) {
+      console.error("Conversion error:", err);
+      outputLabel.textContent = "Error fetching conversion rate.";
+    }
+  }
 
-  buyBtn.addEventListener("click", async () => {
-    const usdAmount = buyBtn.getAttribute("data-usd");
+  async function confirmPurchase() {
+    const usdAmount = parseFloat(buyBtn.getAttribute("data-usd"));
     const bnbAmount = buyBtn.getAttribute("data-bnb");
+    if (!walletAddress || !bnbAmount) return;
 
-    await web3.eth.sendTransaction({
-      from: walletAddress,
-      to: "0x073f5CaDb9424Ce0a50a6E567AB87c2Be97D76F6",
-      value: web3.utils.toWei(bnbAmount, "ether")
+    try {
+      // Send BNB transaction from player to house wallet
+      await web3.eth.sendTransaction({
+        from: walletAddress,
+        to: process.env.HOUSE_WALLET_ADDRESS,
+        value: web3.utils.toWei(bnbAmount, "ether")
+      });
+
+      // Trigger backend to transfer MET tokens to buyer
+      await fetch(`${API_URL}/api/confirm-purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ buyer: walletAddress, usdAmount })
+      });
+
+      alert("Transaction sent! Your MET tokens will arrive shortly.");
+      await fetchBalance();
+    } catch (err) {
+      console.error("Purchase failed:", err);
+      alert("Transaction failed.");
+    }
+  }
+
+  // Event Listeners
+  connectBtn.addEventListener("click", initWallet);
+  spinBtn.addEventListener("click", spinReels);
+  calculateBtn.addEventListener("click", calculateConversion);
+  buyBtn.addEventListener("click", confirmPurchase);
+
+  // Bet button event listener
+  const betValues = [1, 5, 10, 50, 100, 1000];
+  betButtons.forEach((btn, idx) => {
+    btn.addEventListener("click", () => {
+      currentBet = betValues[idx];
+      console.log(`Current bet set to ${currentBet} MET`);
     });
-
-    await fetch(`${API_URL}/api/confirm-purchase`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ buyer: walletAddress, usdAmount })
-    });
-
-    alert("MET tokens will be sent shortly!");
-    fetchBalance();
   });
 
-  await initWeb3();
+  // Initialize win percentage and balance on load
+  await fetchWinPercentage();
+  await initWallet();
 });
