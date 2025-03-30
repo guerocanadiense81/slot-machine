@@ -1,43 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Free Slot Game</title>
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
-<body>
-  <header>
-    <nav>
-      <a href="/index.html">Free Game</a>
-      <a href="/paid.html">Paid Game</a>
-      <a href="/about.html">About</a>
-      <a href="/instructions.html">How to Play</a>
-      <a href="/contact.html">Contact</a>
-      <a href="/admin-login.html">Admin</a>
-    </nav>
-  </header>
-
-  <h1>🎰 Free Slot Machine</h1>
-  <div class="reel-container">
-    <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
-    <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
-    <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
+<!-- Slot machine background -->
+<div id="slotFrame">
+  <img src="/assets/slotmachineidea.png" alt="Slot Machine Frame" />
+  <div id="reels">
+    <div class="reel"><img src="/assets/seven.png" /></div>
+    <div class="reel"><img src="/assets/seven.png" /></div>
+    <div class="reel"><img src="/assets/seven.png" /></div>
   </div>
+</div>
 
-  <div class="controls">
-    <button class="bet">1</button>
-    <button class="bet">5</button>
-    <button class="bet">10</button>
-  </div>
+<!-- Bet buttons -->
+<div class="bet-chips">
+  <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="1 Bet" /></button>
+  <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="5 Bet" /></button>
+  <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="10 Bet" /></button>
+  <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="50 Bet" /></button>
+  <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="100 Bet" /></button>
+</div>
 
-  <div class="bottom-controls">
-    <button id="spinBtn">🎯 SPIN</button>
-    <div id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></div>
-  </div>
+<!-- Spin Button -->
+<button id="spinBtn">SPIN</button>
 
-  <div id="totalCredits">Credits: 0</div>
+<!-- Reset Button -->
+<button id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></button>
 
-  <script src="/js/game.js"></script>
-</body>
-</html>
+<!-- Credits Display -->
+<div id="totalCredits">Credits: 10</div>
