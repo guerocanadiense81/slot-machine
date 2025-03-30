@@ -55,7 +55,7 @@ h1 {
 .reel-container {
   position: absolute;
   top: 120px;
-  left: 74px; /* Adjusted for 6 reels */
+  left: 60px; /* Adjusted for 6 reels */
   width: 610px; /* Enough for 6 reels (6 * ~100px + gap) */
   height: 100px;
   display: flex;
