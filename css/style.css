@@ -1,70 +1,42 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(to bottom, #001f0f, #001407);
-  color: #00ff66;
-  text-align: center;
-}
-
-header {
-  display: flex;
-  justify-content: center;
-  padding: 20px 10px;
-  background-color: #000;
-  border-bottom: 2px solid #00ff66;
-  font-size: 18px;
-}
-
-header a {
-  margin: 0 15px;
-  color: #00ff66;
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-header a:hover {
-  color: #ffffff;
-  text-shadow: 0 0 10px #00ff66;
-}
-
-h1 {
-  margin-top: 10px;
-  font-size: 2rem;
-  color: #00ff66;
-  text-shadow: 0 0 5px #00ff66;
+:root {
+  --slot-machine-width: 700px;
+  --slot-machine-height: 480px;
+  --reel-width: 100px;
+  --reel-height: 220px;
 }
 
 /* Slot Machine */
 #slot-machine {
   position: relative;
-  width: 500px;
-  height: 280px;
+  width: var(--slot-machine-width);
+  height: var(--slot-machine-height);
   margin: 0 auto;
-  background-image: url("/assets/slotmachineidea.png");
+  background-image: url("/assets/slotmachine.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 30px;
 }
 
 /* Reel Container (Inside the Machine) */
 .reel-container {
   position: absolute;
-  top: 120px;
-  left: 60px; /* Adjusted for 6 reels */
-  width: 610px; /* Enough for 6 reels (6 * ~100px + gap) */
+  /* These values can be adjusted; here's an example aligning 6 reels: */
+  top: calc(var(--slot-machine-height) * 0.33);
+  left: calc((var(--slot-machine-width) - (6 * var(--reel-width) + 5 * 10px)) / 2);
+  width: calc(6 * var(--reel-width) + 5 * 10px);
   height: 100px;
   display: flex;
+  justify-content: space-between;
 }
 
 /* Individual Reel Slots */
 .reel {
-  width: 100px;
-  height: 220px;
+  width: var(--reel-width);
+  height: var(--reel-height);
   background: black;
   display: flex;
   align-items: center;
@@ -74,9 +46,9 @@ h1 {
 }
 
 .reel img {
-  width: 100%;
-  height: 90px;
-  object-fit: contain;
+  width: calc(var(--reel-width) - 1px);
+  height: calc(var(--reel-height) * 0.41);
+  transition: transform 0.3s ease;
 }
 
 .reel img.spinning {
@@ -89,105 +61,85 @@ h1 {
   100% { transform: rotateX(360deg); }
 }
 
-#totalCredits {
-  font-size: 1.5rem;
-  margin: 15px;
-  color: #00ff66;
-  text-shadow: 0 0 5px #00ff66;
-}
-
-.controls {
+/* Bet Chips (for paid version) */
+.bet-chips {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
+  gap: 10px;
+  margin: 20px 0;
 }
 
 .bet {
   background: none;
   border: none;
   cursor: pointer;
-  width: 60px;
-  height: 60px;
   padding: 0;
-  transition: transform 0.2s ease;
 }
 
 .bet img {
-  width: 100%;
+  width: 80px;
   height: auto;
+  transition: transform 0.2s ease;
 }
 
 .bet:hover {
   transform: scale(1.1);
 }
 
-#resetBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 130px;
-  height: auto;
-  margin-top: 10px;
-}
-
-#resetBtn img {
-  width: 100%;
-  height: auto;
-  transition: transform 0.2s ease;
-}
-
-#resetBtn:hover img {
-  transform: scale(1.05);
+/* Actions (Spin & Cash Out) */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
 }
 
 #spinBtn {
+  padding: 12px 30px;
+  font-size: 1.2rem;
   background: linear-gradient(to right, #00ff66, #00cc55);
   color: #000;
-  font-size: 1.2rem;
-  padding: 12px 30px;
   border: none;
   border-radius: 8px;
-  margin-top: 20px;
   cursor: pointer;
   font-weight: bold;
   box-shadow: 0 0 10px #00ff66;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition: transform 0.2s ease, background 0.3s ease;
 }
 
 #spinBtn:hover {
+  transform: scale(1.05);
   background: linear-gradient(to right, #00cc55, #00ff66);
+}
+
+/* Cash Out Button */
+#cashOutBtn {
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  background: #ffcc00;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 0 10px #ffcc00;
+  transition: transform 0.2s ease;
+}
+
+#cashOutBtn:hover {
   transform: scale(1.05);
 }
 
-footer {
-  margin-top: 40px;
-  padding: 15px;
-  background-color: #000;
+/* Credits Display */
+#totalCredits,
+#metBalance {
+  font-size: 1.5rem;
+  margin: 15px;
   color: #00ff66;
-  font-size: 14px;
-  border-top: 1px solid #00ff66;
+  text-shadow: 0 0 5px #00ff66;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .reel {
-    width: 80px;
-    height: 80px;
-  }
-
-  #spinBtn {
-    padding: 10px 20px;
-    font-size: 1rem;
-  }
-
-  .controls {
-    gap: 10px;
-  }
-
-  .bet {
-    width: 50px;
-    height: 50px;
-  }
+/* Debug Panel */
+#debugger {
+  font-size: 0.9rem;
 }
