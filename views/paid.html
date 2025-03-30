@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Paid Slot Game</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-    <script src="/js/wallet.js"></script>
-    <script src="/js/paid-game.js"></script>
+    <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
     <header>
         <nav>
             <a href="/index.html">Free Game</a>
-            <a href="/paid.html">Paid Game</a>
+            <a href="/paid.html" class="active">Paid Game</a>
             <a href="/about.html">About</a>
             <a href="/instructions.html">How to Play</a>
             <a href="/contact.html">Contact</a>
@@ -28,7 +25,7 @@
         <div class="point"><button id="connectWallet">Connect Wallet</button></div>
     </div>
 
-    <section id="slot-machine" style="position: relative;">
+    <section id="slot-machine">
         <div class="reel-container">
             <div class="reel"><img src="/assets/seven.png" alt="reel" /></div>
             <div class="reel"><img src="/assets/coins1.png" alt="reel" /></div>
@@ -40,56 +37,21 @@
     </section>
 
     <div class="controls">
-        <button class="bet" data-bet="1"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
-        <button class="bet" data-bet="5"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
-        <button class="bet" data-bet="10"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
-        <button class="bet" data-bet="50"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
-        <button class="bet" data-bet="100"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
+        <button class="bet"><img src="/assets/1go.png" alt="Bet 1 MET" /></button>
+        <button class="bet"><img src="/assets/5go.png" alt="Bet 5 MET" /></button>
+        <button class="bet"><img src="/assets/10go.png" alt="Bet 10 MET" /></button>
+        <button class="bet"><img src="/assets/50go.png" alt="Bet 50 MET" /></button>
+        <button class="bet"><img src="/assets/100go.png" alt="Bet 100 MET" /></button>
     </div>
 
     <div class="bottom-controls">
-        <button id="spinBtn" class="spinBtn" disabled>🎯 SPIN</button>
+        <button id="spinBtn" class="spinBtn">🎯 SPIN</button>
+        <div id="resetBtn"><img src="/assets/resetBtn.png" alt="Reset" /></div>
         <button id="cashOutBtn" class="spinBtn">💵 CASH OUT</button>
     </div>
 
-    <div id="debugger" style="margin-top: 20px;">
-        <button onclick="moveReels('up')">Move Reels Up</button>
-        <button onclick="moveReels('down')">Move Reels Down</button>
-        <button onclick="moveReels('left')">Move Reels Left</button>
-        <button onclick="moveReels('right')">Move Reels Right</button>
-        <button onclick="moveMachine('up')">Move Machine Up</button>
-        <button onclick="moveMachine('down')">Move Machine Down</button>
-        <button onclick="moveMachine('left')">Move Machine Left</button>
-        <button onclick="moveMachine('right')">Move Machine Right</button>
-    </div>
-
-    <script>
-        function moveReels(direction) {
-            const container = document.querySelector('.reel-container');
-            adjustPosition(container, direction);
-        }
-
-        function moveMachine(direction) {
-            const machine = document.getElementById('slot-machine');
-            adjustPosition(machine, direction);
-        }
-
-        function adjustPosition(element, direction) {
-            const step = 10; // pixels
-            const style = window.getComputedStyle(element);
-            let top = parseInt(style.top, 10);
-            let left = parseInt(style.left, 10);
-
-            switch (direction) {
-                case 'up': top -= step; break;
-                case 'down': top += step; break;
-                case 'left': left -= step; break;
-                case 'right': left += step; break;
-            }
-
-            element.style.top = `${top}px`;
-            element.style.left = `${left}px`;
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+    <script src="/js/wallet.js"></script>
+    <script src="/js/paid-game.js"></script>
 </body>
 </html>
