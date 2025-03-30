@@ -2,26 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <h1>🛠️ Admin Dashboard</h1>
+  <header>
+    <nav>
+      <a href="/index.html">Free Game</a>
+      <a href="/paid.html">Paid Game</a>
+      <a href="/instructions.html">How to Play</a>
+      <a href="/admin.html" class="active">Admin</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
 
-  <section>
-    <h2>🎁 Send Bonus MET</h2>
-    <input type="text" id="bonusWallet" placeholder="Enter Wallet Address" />
-    <input type="number" id="bonusAmount" placeholder="Amount in MET" />
-    <button id="sendBonusBtn">Send Bonus</button>
-  </section>
+  <main class="admin-container">
+    <h1>🎛️ Admin Dashboard</h1>
 
-  <section>
-    <h2>📊 Player Balances</h2>
-    <div id="walletList"></div>
-    <button id="refreshBtn">🔄 Refresh</button>
-    <button id="exportCSVBtn">📄 Export CSV</button>
-  </section>
+    <section class="admin-section">
+      <h2>🎯 Update Win Percentages</h2>
+      <label for="paidWinPercent">Paid Game Win %:</label>
+      <input type="number" id="paidWinPercent" min="0" max="100" />
+      <label for="freeWinPercent">Free Game Win %:</label>
+      <input type="number" id="freeWinPercent" min="0" max="100" />
+      <button id="updateWinBtn">Update</button>
+    </section>
+
+    <section class="admin-section">
+      <h2>🎁 Send Bonus to Player</h2>
+      <form id="bonusForm">
+        <input type="text" id="bonusWallet" placeholder="Player MET Wallet Address" required />
+        <input type="number" id="bonusAmount" placeholder="Bonus Amount (MET)" step="0.01" required />
+        <button type="submit">Send Bonus</button>
+      </form>
+    </section>
+
+    <section class="admin-section">
+      <h2>📈 Player Balances (Off-Chain)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Wallet</th>
+            <th>Credits (MET)</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </section>
+
+    <section class="admin-section">
+      <h2>📝 Export Game Logs</h2>
+      <button id="exportLogsBtn">Download CSV</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MET Slot Machine | All rights reserved.</p>
+  </footer>
 
   <script src="/js/admin.js"></script>
 </body>
