@@ -206,3 +206,19 @@ input[type=number], input[type=text] {
     color: #39FF14;
     text-shadow: 0 0 3px #39FF14;
 }
+
+/* ------------------------------------
+   Slot Machine Reel Animation
+------------------------------------ */
+.reel img.spinning {
+  animation: spinEffect 0.5s ease-in-out infinite;
+}
+
+@keyframes spinEffect {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(180deg); }
+  100% { transform: rotateX(360deg); }
+}
+
+/* (Optional) Footer styles or other section follows here */
+
