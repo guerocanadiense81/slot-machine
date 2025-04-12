@@ -15,24 +15,26 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from the project root directories (adjusting ".." because server.js is in /server)
+// Since server.js is inside "server", use "../" to reach project root folders.
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Explicit route for home page
+// Home route to serve index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
-/* ---------------------------
+/* ---------------------------------------------------------
    Off-chain Virtual Credit Endpoints
-   --------------------------- */
+   --------------------------------------------------------- */
 
-// Using an in-memory store for demo purposes (replace with a persistent database in production)
+// In-memory store for user in‑game balances (keyed by wallet address)
+// and aggregated house funds (losses).
 const userBalances = {};
+let houseFunds = 0;
 
-// GET a user's off-chain balance using their wallet address (case-insensitive)
+// GET a user's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
@@ -40,9 +42,10 @@ app.get('/api/user/:walletAddress', (req, res) => {
 });
 
 /*
-  POST endpoint to update a user's balance.
-  The client sends { "balanceChange": <number> }.
-  If the balance change would result in a negative balance, we set it to 0.
+  POST endpoint to update a user's balance by a relative change.
+  Expects JSON: { "balanceChange": <number> }
+  If the balanceChange is negative, that loss is added to houseFunds.
+  The balance cannot go below 0.
 */
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -50,51 +53,67 @@ app.post('/api/user/:walletAddress', (req, res) => {
   if (balanceChange === undefined) {
     return res.status(400).json({ error: "balanceChange is required" });
   }
-  let currentBalance = parseFloat(userBalances[wallet] || "0");
-  let newBalance = currentBalance + parseFloat(balanceChange);
-  if (newBalance < 0) newBalance = 0; // Prevent negative balance
+  const currentBalance = parseFloat(userBalances[wallet] || "0");
+  let change = parseFloat(balanceChange);
+  let newBalance = currentBalance + change;
+  if (newBalance < 0) {
+    change = -currentBalance; // Only deduct the available funds
+    newBalance = 0;
+  }
   userBalances[wallet] = newBalance.toString();
+  if (change < 0) {
+    // Aggregate losses into houseFunds.
+    houseFunds += Math.abs(change);
+  }
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
 /*
-  Cash Out Endpoint (Admin Only)
-  Expects a valid JWT token in the "Authorization" header in the form "Bearer <token>"
-  and a JSON body with { "wallet": "<playerWalletAddress>" }.
-  This endpoint simulates an on-chain cash-out:
-  • It resets the player's off-chain balance to 0.
-  • In production, you would trigger an on-chain transfer of MET tokens.
+  GET endpoint for admin to view the aggregated house funds (losses)
+  Protected by JWT (admin token)
 */
-app.post('/api/admin/cashout', (req, res) => {
+app.get('/api/admin/house-funds', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized, token required" });
+    return res.status(401).json({ error: "Unauthorized, token required." });
   }
   const token = authHeader.split(" ")[1];
   try {
     jwt.verify(token, SECRET_KEY);
   } catch (error) {
-    return res.status(401).json({ error: "Invalid token" });
+    return res.status(401).json({ error: "Invalid token." });
   }
-
-  const { wallet } = req.body;
-  if (!wallet) {
-    return res.status(400).json({ error: "wallet is required in body" });
-  }
-  const normalizedWallet = wallet.toLowerCase();
-  let currentBalance = parseFloat(userBalances[normalizedWallet] || "0");
-  if (currentBalance <= 0) {
-    return res.status(400).json({ error: "No balance to cash out." });
-  }
-  // In a production environment, trigger the on-chain transfer here
-  // For demo, we simply reset the off-chain balance to 0 and return the amount cashed out.
-  userBalances[normalizedWallet] = "0";
-  res.json({ wallet: normalizedWallet, cashedOut: currentBalance });
+  res.json({ houseFunds: houseFunds.toString() });
 });
 
-/* ---------------------------
-   Other Existing Endpoints (win percentage, transactions, admin login, contact, etc.)
-   --------------------------- */
+/*
+  POST endpoint for admin to cash out the house funds.
+  This resets the aggregated house funds to 0.
+  (In production, this would trigger an on-chain MET token transfer from your house wallet.)
+*/
+app.post('/api/admin/cashout-house', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized, token required." });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    jwt.verify(token, SECRET_KEY);
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid token." });
+  }
+  if (houseFunds <= 0) {
+    return res.status(400).json({ error: "No funds to cash out." });
+  }
+  const cashedOut = houseFunds;
+  houseFunds = 0;
+  // In production, you would add logic here to trigger an on-chain transfer.
+  res.json({ cashedOut: cashedOut.toString() });
+});
+
+/* ---------------------------------------------------------
+   Other Existing Endpoints (Win Percentage, Transactions, Admin Login, etc.)
+   --------------------------------------------------------- */
 
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
@@ -113,7 +132,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Example endpoint for admin login (returns a JWT token)
+// Example admin login endpoint (returns JWT token)
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -124,7 +143,7 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// (Other endpoints like /api/record-transaction, /api/transactions, etc. can go here.)
+// (Additional endpoints such as for transactions, contact, etc., can be added below.)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
