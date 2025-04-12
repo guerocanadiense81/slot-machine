@@ -1,4 +1,5 @@
 // server/server.js
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -16,7 +17,7 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files (since server.js is in the "server" folder, use "../" to refer to sibling folders)
+// Serve static files from sibling folders (since server.js is in /server)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
@@ -29,12 +30,11 @@ app.get('/', (req, res) => {
 /* =====================================================
    On-chain Settlement Setup via ethers.js
    ===================================================== */
-
-// Create an ethers provider and house signer (using PRIVATE_KEY)
+// Initialize ethers provider and signer for your house wallet
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Minimal ABI for winBet and loseBet functions
+// Minimal ABI for winBet and loseBet functions in your MET token contract.
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -43,17 +43,16 @@ const MET_CONTRACT_ADDRESS = process.env.MET_CONTRACT_ADDRESS;
 const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
 
 /* =====================================================
-   Off-chain Virtual Balance & Transaction Log Endpoints
+   Off-chain Virtual Balance & Transaction Logging
    ===================================================== */
-
-// In-memory store for each player’s balance (keyed by wallet address)
-const userBalances = {};  
-// Global variable to aggregate losses (house funds)
-let houseFunds = 0;  
-// In-memory transaction log array
+// In-memory user balances (keyed by wallet address)
+const userBalances = {};
+// Global aggregated losses (house funds)
+let houseFunds = 0;
+// In-memory array to log transactions
 let transactions = [];
 
-// GET: Retrieve a player's off-chain balance
+// GET player's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
@@ -61,11 +60,12 @@ app.get('/api/user/:walletAddress', (req, res) => {
 });
 
 /*
-  POST: Update a player's off-chain balance by a relative change.
-  Expects { "balanceChange": <number> }.
-  Prevents balance from going below 0.
+  POST /api/user/:walletAddress
+  Expects { "balanceChange": <number> }
+  Updates the player's off-chain balance relative to the current balance.
+  Ensures balance does not drop below 0.
   Negative changes are added to houseFunds.
-  Each update is logged in the transaction log.
+  A log entry is pushed to the transactions array.
 */
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -88,29 +88,59 @@ app.post('/api/user/:walletAddress', (req, res) => {
   transactions.push({
     address: wallet,
     amount: change.toString(),
-    status: change < 0 ? "loss" : (change > 0 ? "win" : "neutral"),
+    status: (change < 0) ? "loss" : (change > 0 ? "win" : "neutral"),
     date: new Date()
   });
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
-// GET: Return transaction logs
+// GET transaction logs
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
+// GET /api/admin/house-funds – returns aggregated house funds (protected by JWT)
+app.get('/api/admin/house-funds', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized, token required." });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    jwt.verify(token, SECRET_KEY);
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid token." });
+  }
+  res.json({ houseFunds: houseFunds.toString() });
+});
+
+// POST /api/admin/cashout-house – resets houseFunds to 0 (protected by JWT)
+app.post('/api/admin/cashout-house', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized, token required." });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    jwt.verify(token, SECRET_KEY);
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid token." });
+  }
+  if (houseFunds <= 0) {
+    return res.status(400).json({ error: "No funds to cash out." });
+  }
+  const cashedOut = houseFunds;
+  houseFunds = 0;
+  res.json({ cashedOut: cashedOut.toString() });
+});
+
 /*
   POST /api/player/reconcile
-  Called when a player finishes their session.
-  Expects:
-    { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
+  Expects { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
   Calculates netChange = finalBalance - initialDeposit.
-    • netChange > 0 means the player won extra tokens.
-    • netChange < 0 means the player lost tokens.
-  Then triggers on-chain settlement:
-    • winBet() if netChange > 0
-    • loseBet() if netChange < 0
-  Returns the transaction receipt and a message.
+  If netChange > 0, calls winBet() (transfers extra tokens from house wallet to player).
+  If netChange < 0, calls loseBet() (transfers tokens from player's wallet to house wallet).
+  Returns transaction receipt and a message.
 */
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet, initialDeposit, finalBalance } = req.body;
@@ -122,10 +152,10 @@ app.post('/api/player/reconcile', async (req, res) => {
   let txResult = null;
   try {
     if (netChange > 0) {
-      console.log(`winBet: Awarding net win of ${netChange} MET to ${normalizedWallet}`);
+      console.log(`winBet: Transferring net win of ${netChange} MET to ${normalizedWallet}`);
       txResult = await metContract.winBet(normalizedWallet, ethers.utils.parseUnits(netChange.toString(), 18));
     } else if (netChange < 0) {
-      console.log(`loseBet: Deducting net loss of ${Math.abs(netChange)} MET from ${normalizedWallet}`);
+      console.log(`loseBet: Transferring net loss of ${Math.abs(netChange)} MET from ${normalizedWallet}`);
       txResult = await metContract.loseBet(normalizedWallet, ethers.utils.parseUnits(Math.abs(netChange).toString(), 18));
     } else {
       return res.json({
@@ -136,7 +166,7 @@ app.post('/api/player/reconcile', async (req, res) => {
     }
     console.log("Awaiting on-chain transaction confirmation...");
     const receipt = await txResult.wait();
-    // Log reconciliation transaction
+    // Log the reconciliation transaction.
     transactions.push({
       address: normalizedWallet,
       amount: netChange.toString(),
@@ -161,55 +191,7 @@ app.post('/api/player/reconcile', async (req, res) => {
 });
 
 /* =====================================================
-   Admin Endpoints
-   ===================================================== */
-
-/*
-  GET /api/admin/house-funds 
-  Returns the aggregated house funds.
-  Protected by JWT.
-*/
-app.get('/api/admin/house-funds', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized, token required." });
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, SECRET_KEY);
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token." });
-  }
-  res.json({ houseFunds: houseFunds.toString() });
-});
-
-/*
-  POST /api/admin/cashout-house 
-  Resets houseFunds to 0.
-  Protected by JWT.
-  In production, this should trigger an on-chain transfer from the house wallet.
-*/
-app.post('/api/admin/cashout-house', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized, token required." });
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, SECRET_KEY);
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token." });
-  }
-  if (houseFunds <= 0) {
-    return res.status(400).json({ error: "No funds to cash out." });
-  }
-  const cashedOut = houseFunds;
-  houseFunds = 0;
-  res.json({ cashedOut: cashedOut.toString() });
-});
-
-/* =====================================================
-   Other Endpoints (Win Percentage, Admin Login, etc.)
+   Other Endpoints
    ===================================================== */
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 
@@ -227,7 +209,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Admin login endpoint (returns a JWT token).
+// Admin login endpoint: returns a JWT token.
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -236,6 +218,25 @@ app.post("/admin/login", (req, res) => {
   } else {
     res.status(401).json({ success: false, message: "Unauthorized" });
   }
+});
+
+// Download transactions endpoint: returns a CSV and resets the transactions array.
+app.get('/api/download-transactions', (req, res) => {
+  let csvContent = "Address,Amount MET,Status,Date,TxHash\n";
+  transactions.forEach(tx => {
+    csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date.toISOString()},${tx.txHash || ""}\n`;
+  });
+  const filePath = path.join(__dirname, '../transactions.csv');
+  fs.writeFileSync(filePath, csvContent);
+  res.download(filePath, 'transactions.csv', (err) => {
+    if (err) {
+      console.error("Error downloading transactions:", err);
+    } else {
+      console.log("Transactions downloaded successfully, resetting logs.");
+      transactions = []; // Reset the in-memory logs after download
+    }
+    fs.unlinkSync(filePath);
+  });
 });
 
 app.listen(PORT, () => {
