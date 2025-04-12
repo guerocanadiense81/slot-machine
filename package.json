@@ -2,7 +2,7 @@
   "name": "slot-machine-project",
   "version": "1.0.0",
   "description": "A Web3-enabled slot machine with free and paid versions.",
-  "main": "server.js",
+  "main": "sever/server.js",
   "scripts": {
     "start": "node server.js"
   },
