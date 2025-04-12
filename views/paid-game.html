@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Slot Machine - Paid Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/paid.css">
-  <!-- Include ethers.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <!-- Include the UMD build of ethers.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <!-- Other scripts -->
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
   <script src="/wallet.js" defer></script>
@@ -14,18 +16,19 @@
   <nav>
     <a href="/index.html">Free Version</a> |
     <a href="/paid-game.html">Paid Version</a> |
-    <a href="/contact.html">Contact</a>
-    <!-- Admin link is hidden; use direct URL /admin-login.html if needed -->
+    <a href="/contact.html">Contact</a> |
     <a href="/instructions.html">Instructions</a>
   </nav>
   
   <!-- Wallet and Virtual Balance Section -->
   <div id="wallet">
-    <div id="metBalance">Balance: <span id="credits-display">0</span> MET</div>
+    <div id="metBalance">
+      Balance: <span id="credits-display">0</span> MET
+    </div>
     <button id="connectWallet">Connect Wallet</button>
   </div>
   
-  <!-- Gameplay UI -->
+  <!-- (Other parts of your paid game UI go here, like game controls and slot machine container) -->
   <div id="game-ui">
     <div>Virtual Credits: <span id="credits-display">0</span> MET</div>
     <div>
@@ -34,7 +37,6 @@
     <div id="message-display"></div>
   </div>
   
-  <!-- Slot Machine Container -->
   <div id="container">
     <div class="window-border">
       <div class="window">
