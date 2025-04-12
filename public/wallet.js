@@ -1,50 +1,53 @@
-// Ensure ethers.js is loaded (installed via package.json)
-document.addEventListener("DOMContentLoaded", function () {
-  async function connectWallet() {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        document.getElementById("walletAddress").textContent = `Wallet: ${accounts[0]}`;
-      } catch (error) {
-        console.error("Wallet connection failed", error);
-      }
-    } else {
-      alert("Please install MetaMask.");
+// public/wallet.js
+// Make sure ethers.js is loaded in your HTML (e.g., via CDN)
+
+document.addEventListener("DOMContentLoaded", async () => {
+  // Connect to MetaMask and retrieve user wallet address and balance
+  async function connectWalletAndLoadBalance() {
+    if (!window.ethereum) {
+      alert("Please install MetaMask to play the paid version.");
+      return;
+    }
+    try {
+      // Request account connection
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const walletAddress = accounts[0];
+      console.log("Connected wallet:", walletAddress);
+      window.userWallet = walletAddress; // save globally for later use
+
+      // Fetch the user's stored virtual balance from your backend
+      const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
+      if (!response.ok) throw new Error("Failed to load balance.");
+      const data = await response.json();
+      // Update UI element with id "credits-display"
+      document.getElementById("credits-display").innerText = data.balance;
+    } catch (error) {
+      console.error("Error connecting wallet or loading balance:", error);
+      alert("Error connecting wallet or loading balance. Check console for details.");
     }
   }
-  document.getElementById("connectWallet").addEventListener("click", connectWallet);
 
-  // Cash Out Functionality using ethers.js and CoinGecko API
-  window.cashOut = async function(metAmount) {
-    // 1 MET = 1 USD; fetch BNB price (USD) from CoinGecko
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd");
-    const data = await res.json();
-    const bnbPriceUSD = data.binancecoin.usd; // USD per BNB
-    // Calculate required BNB amount
-    const requiredBNB = metAmount / bnbPriceUSD;
+  // Call the connection and load function on page load
+  await connectWalletAndLoadBalance();
 
-    // Initialize ethers.js
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-
-    // Replace 'abi' with your contract's ABI
-    const abi = [
-      // Minimal ABI for a payable function "buyMET"
-      "function buyMET() payable"
-    ];
-    const contractAddress = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
-    const contract = new ethers.Contract(contractAddress, abi, signer);
-
+  // Expose a global function to update the user's in-game balance in the backend
+  window.updateInGameBalance = async function(newBalance) {
+    if (!window.userWallet) {
+      alert("Wallet not connected.");
+      return;
+    }
     try {
-      const tx = await contract.buyMET({
-        value: ethers.utils.parseEther(requiredBNB.toString())
+      const response = await fetch(`/api/user/${window.userWallet.toLowerCase()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balance: newBalance })
       });
-      await tx.wait();
-      alert("Cash out successful! MET tokens have been sent to your wallet.");
+      const result = await response.json();
+      console.log("Balance updated:", result);
+      // Update the UI
+      document.getElementById("credits-display").innerText = result.newBalance;
     } catch (error) {
-      console.error("Cash out failed", error);
-      alert("Cash out failed. Please try again.");
+      console.error("Error updating in-game balance:", error);
     }
   }
 });
