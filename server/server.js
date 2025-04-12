@@ -15,45 +15,51 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from the folders relative to project root
+// Serve static files from the views, public, and items folders.
+// Since server.js is in the "server" folder, use "../" to go up one level.
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Explicit route for the homepage: use index.html from the views folder
+// Explicit route for the home page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
-/* ================================
-   Off-Chain Virtual Credit Endpoints
-   ================================ */
+/* -----------------------------
+   Off-chain Virtual Credit Endpoints
+   ----------------------------- */
 
-// In-memory store for user in-game MET balances (use a real database in production)
+// In-memory store for user in‑game MET balances.
+// Use a persistent database in production.
 const userBalances = {};
 
-// GET: Retrieve a user's balance by wallet address
+// GET a user's balance by their wallet address (case-insensitive).
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
   res.json({ wallet, balance });
 });
 
-// POST: Update (or set) a user's balance by wallet address
+// POST endpoint to update a user's balance by adding a relative change.
+// Expects a JSON body: { "balanceChange": <number> }
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
-  const { balance } = req.body;
-  if (balance === undefined) {
-    return res.status(400).json({ error: "Balance is required" });
+  const { balanceChange } = req.body;
+  if (balanceChange === undefined) {
+    return res.status(400).json({ error: "balanceChange is required" });
   }
-  // Store balance as a string to avoid precision issues
-  userBalances[wallet] = balance.toString();
+  // Get current balance (default to 0 if not set)
+  let currentBalance = parseFloat(userBalances[wallet] || "0");
+  let newBalance = currentBalance + parseFloat(balanceChange);
+  // Save new balance as string (you could convert to a fixed decimal format if desired)
+  userBalances[wallet] = newBalance.toString();
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
-/* ================================
-   Other existing endpoints (for win percentage, transactions, admin, etc.)
-   ================================ */
+/* -----------------------------
+   Other Existing Endpoints
+   ----------------------------- */
 
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
@@ -92,8 +98,7 @@ app.get('/api/download-transactions', (req, res) => {
   res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
 });
 
-// Admin login and contact endpoints here (omitted for brevity)
-// ...
+// (Other endpoints such as admin login and contact can follow here.)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
