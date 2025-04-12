@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slot Machine - Paid Version</title>
   <link rel="stylesheet" href="/paid.css">
-  <!-- Include UMD ethers.js -->
+  <!-- Include the UMD build of ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
@@ -39,8 +39,8 @@
   
   <!-- Cash Out Section -->
   <div id="cashOutSection">
-    <h3>Cash Out</h3>
-    <button onclick="cashOut()">Cash Out</button>
+    <h3>Finish Game & Cash Out</h3>
+    <button onclick="reconcileSession()">Finish Game (Reconcile)</button>
   </div>
   
   <!-- Game UI Panel -->
