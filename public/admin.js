@@ -1,5 +1,3 @@
-// public/admin.js
-
 document.addEventListener("DOMContentLoaded", () => {
   // Determine if we are on the admin login page or the admin panel page.
   const isLoginPage = document.getElementById("adminLoginForm") !== null;
@@ -14,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return localStorage.getItem("adminToken");
   }
 
-  // ADMIN LOGIN LOGIC (for admin-login.html)
+  // Admin login logic (for admin-login.html)
   if (isLoginPage) {
     document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -43,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ADMIN PANEL LOGIC (for admin.html)
+  // Admin panel logic (for admin.html)
   if (isAdminPanel) {
     const token = getToken();
     if (!token) {
@@ -52,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // Function to fetch and display the aggregated house funds
+    // Fetch and display aggregated house funds.
     async function fetchHouseFunds() {
       try {
         const res = await fetch("/api/admin/house-funds", {
@@ -63,18 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         const data = await res.json();
-        console.log("House funds fetched:", data);
-        const houseFundsDisplay = document.getElementById("houseFundsDisplay");
-        if (houseFundsDisplay) {
-          houseFundsDisplay.innerText = data.houseFunds;
-        }
+        document.getElementById("houseFundsDisplay").innerText = data.houseFunds;
       } catch (error) {
         console.error("Error fetching house funds:", error);
       }
     }
     fetchHouseFunds();
 
-    // Cash-out button handler for the aggregated house funds.
+    // Handle cash-out of house funds.
     const cashOutHouseBtn = document.getElementById("cashOutHouseButton");
     if (cashOutHouseBtn) {
       cashOutHouseBtn.addEventListener("click", async () => {
@@ -85,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
               "Content-Type": "application/json",
               "Authorization": "Bearer " + token
             },
-            body: JSON.stringify({}) // no additional data required
+            body: JSON.stringify({})
           });
           if (!response.ok) {
             const errData = await response.json();
@@ -94,15 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           const result = await response.json();
           document.getElementById("houseCashoutMessage").innerText = "Cash out of " + result.cashedOut + " MET processed.";
-          // Refresh the house funds display
           fetchHouseFunds();
         } catch (error) {
-          console.error("Error during house funds cash out:", error);
+          console.error("Error during cash out:", error);
           document.getElementById("houseCashoutMessage").innerText = "Error during cash out. Check console for details.";
         }
       });
     } else {
-      console.error("Cash out button not found in admin panel.");
+      console.error("Cash Out button not found in admin panel.");
     }
 
     // Logout functionality.
@@ -114,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Fetch transaction logs to display.
+    // Fetch and display transaction logs.
     async function fetchTransactionLogs() {
       try {
         const res = await fetch("/api/transactions");
@@ -131,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
               .map(tx => `
                 <div>
                   <strong>${tx.address}</strong> - ${tx.amount} MET - ${tx.status} - ${new Date(tx.date).toLocaleString()}
+                  ${tx.txHash ? "| TX: " + tx.txHash : ""}
                 </div>
               `).join('');
           } else {
@@ -142,5 +136,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     fetchTransactionLogs();
+    
+    // Add Download Logs button handler.
+    const downloadLogsBtn = document.getElementById("downloadLogsButton");
+    if (downloadLogsBtn) {
+      downloadLogsBtn.addEventListener("click", () => {
+        window.location.href = "/api/download-transactions";
+      });
+    }
   }
 });
