@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Slot Machine - Paid Version</title>
   <link rel="stylesheet" href="/paid.css">
+  <!-- Include ethers.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
   <script src="/wallet.js" defer></script>
@@ -12,20 +14,20 @@
   <nav>
     <a href="/index.html">Free Version</a> |
     <a href="/paid-game.html">Paid Version</a> |
-    <a href="/contact.html">Contact</a> |
+    <a href="/contact.html">Contact</a>
+    <!-- Admin link is hidden; use direct URL /admin-login.html if needed -->
     <a href="/instructions.html">Instructions</a>
   </nav>
   
-  <!-- Wallet Section -->
+  <!-- Wallet and Virtual Balance Section -->
   <div id="wallet">
-    <div id="metBalance">100</div>
+    <div id="metBalance">Balance: <span id="credits-display">0</span> MET</div>
     <button id="connectWallet">Connect Wallet</button>
-    <button id="cashOutBtn">Cash Out</button>
   </div>
   
-  <!-- Game UI Panel -->
+  <!-- Gameplay UI -->
   <div id="game-ui">
-    <div>Credits: <span id="credits-display">1000</span></div>
+    <div>Virtual Credits: <span id="credits-display">0</span> MET</div>
     <div>
       Bet: <input type="number" id="bet-input" value="50" min="1">
     </div>
@@ -51,14 +53,5 @@
     </div>
     <input type="button" onclick="spin(this)" class="start-button" value="Spin"/>
   </div>
-
-  <script>
-    // Bind cash out functionality – ensure cashOut() is defined in wallet.js
-    document.getElementById("cashOutBtn").addEventListener("click", async () => {
-      // Replace this with your actual calculation of MET amount
-      const metAmount = 100;
-      await cashOut(metAmount);
-    });
-  </script>
 </body>
 </html>
