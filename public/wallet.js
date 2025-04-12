@@ -3,7 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
 
-  // Global variables to store off-chain balance and the initial deposit for the session.
+  // Global variables to store the player's off-chain balance and session initial deposit.
   window.offchainBalance = 0;
   window.initialDeposit = 0;
 
@@ -30,9 +30,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const creditsDisplay = document.getElementById("credits-display");
       if (creditsDisplay) creditsDisplay.innerText = data.balance;
       window.offchainBalance = parseFloat(data.balance) || 0;
+      // Record the initial deposit for this session.
       window.initialDeposit = window.offchainBalance;
       
-      // Fetch on-chain MET balance (for display)
+      // Fetch on-chain MET balance for display.
       await getOnChainMETBalance();
     } catch (error) {
       console.error("Error connecting wallet:", error);
@@ -59,30 +60,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Attach wallet connection handler.
   const connectWalletBtn = document.getElementById("connectWallet");
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
+    console.log("connectWallet event listener attached.");
+  } else {
+    console.error("Connect Wallet button not found in DOM.");
   }
 
-  // Update off-chain balance by relative change
+  // Global function: update the player's off-chain balance by a relative change.
   window.updateInGameBalance = async function(balanceChange) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
       return;
     }
-    const response = await fetch(`/api/user/${window.userWallet.toLowerCase()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ balanceChange: balanceChange })
-    });
-    const result = await response.json();
-    const creditsDisplay = document.getElementById("credits-display");
-    if (creditsDisplay) creditsDisplay.innerText = result.newBalance;
-    window.offchainBalance = parseFloat(result.newBalance);
-    return result.newBalance;
+    try {
+      const response = await fetch(`/api/user/${window.userWallet.toLowerCase()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ balanceChange: balanceChange })
+      });
+      const result = await response.json();
+      console.log("Off-chain balance updated on backend:", result);
+      const creditsDisplay = document.getElementById("credits-display");
+      if (creditsDisplay) creditsDisplay.innerText = result.newBalance;
+      window.offchainBalance = parseFloat(result.newBalance);
+      return result.newBalance;
+    } catch (error) {
+      console.error("Error updating off-chain balance:", error);
+    }
   };
 
-  // Manual deposit function
+  // Manual deposit: adds deposit amount to off-chain balance.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     let depositAmount = parseFloat(depositInput.value);
@@ -90,12 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please enter a valid deposit amount.");
       return;
     }
+    console.log("Depositing MET. Current balance:", window.offchainBalance, "Deposit amount:", depositAmount);
     await window.updateInGameBalance(depositAmount);
     alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
   };
 
-  // Reconciliation function for final settlement.
-  // Calls the backend /api/player/reconcile endpoint.
+  // Reconciliation: finishes the session and triggers on-chain settlement.
   window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -113,13 +123,14 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload)
       });
       const data = await response.json();
-      alert("Session reconciled. " + data.message + "\nTransaction hash: " + data.txHash);
+      alert("Session reconciled. " + data.message + "\nTX Hash: " + data.txHash);
     } catch (error) {
       console.error("Error during session reconciliation:", error);
       alert("Error during reconciliation. Check console for details.");
     }
   };
 
+  // Optionally, use navigator.sendBeacon on beforeunload for automatic reconciliation.
   window.addEventListener("beforeunload", () => {
     if (window.userWallet) {
       const payload = JSON.stringify({
