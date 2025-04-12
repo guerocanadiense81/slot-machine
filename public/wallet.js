@@ -14,20 +14,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || accounts.length === 0) return;
+      if (!accounts || !accounts.length) return;
       const walletAddress = accounts[0];
       console.log("Connected wallet:", walletAddress);
       window.userWallet = walletAddress;
       alert("Wallet connected: " + walletAddress);
       
+      // Fetch off-chain balance from the backend.
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       const data = await response.json();
       console.log("Fetched off-chain balance:", data.balance);
       const creditsDisplay = document.getElementById("credits-display");
       if (creditsDisplay) creditsDisplay.innerText = data.balance;
       window.offchainBalance = parseFloat(data.balance) || 0;
-      window.initialDeposit = window.offchainBalance;
+      window.initialDeposit = window.offchainBalance; // Record session's initial deposit
       
+      // Fetch on-chain MET balance for display.
       await getOnChainMETBalance();
     } catch (error) {
       console.error("Error connecting wallet:", error);
@@ -91,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please enter a valid deposit amount.");
       return;
     }
-    console.log("Depositing MET. Current balance:", window.offchainBalance, "Deposit amount:", depositAmount);
+    console.log("Depositing MET. Current balance:", window.offchainBalance, "Deposit:", depositAmount);
     await window.updateInGameBalance(depositAmount);
     alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
   };
@@ -120,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Optionally trigger reconciliation on page unload via sendBeacon.
   window.addEventListener("beforeunload", () => {
     if (window.userWallet) {
       const payload = JSON.stringify({
