@@ -19,7 +19,7 @@
     <a href="/instructions.html">Instructions</a>
   </nav>
   
-  <!-- Wallet & Balance Section -->
+  <!-- Wallet and Balance Section -->
   <div id="wallet">
     <div id="metBalance">
       Off-chain Balance: <span id="credits-display">0</span> MET
@@ -30,11 +30,17 @@
     <button id="connectWallet">Connect Wallet</button>
   </div>
   
-  <!-- Deposit Section -->
+  <!-- Deposit Section for Manual Off-chain Deposit -->
   <div id="depositSection">
     <h3>Manual Deposit</h3>
     <input type="number" id="depositInput" placeholder="Enter deposit amount in MET">
     <button onclick="manualDeposit()">Deposit MET</button>
+  </div>
+  
+  <!-- Cash Out Section -->
+  <div id="cashOutSection">
+    <h3>Cash Out</h3>
+    <button onclick="cashOut()">Cash Out</button>
   </div>
   
   <!-- Game UI Panel -->
