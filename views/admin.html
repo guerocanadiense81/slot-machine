@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="/admin.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body>
+  <nav>
+    <a href="/index.html">Free Version</a> |
+    <a href="/paid-game.html">Paid Version</a> |
+    <a href="/contact.html">Contact</a> |
+    <a href="/admin.html">Admin</a>
+  </nav>
+  
+  <h1>Admin Panel</h1>
+  <div>
+    <label>Win Percentage: </label>
+    <input type="number" id="winPercentageInput" value="30" min="0" max="100">
+    <button onclick="updateWinPercentage()">Update</button>
+  </div>
+  <h2>Transaction Log</h2>
+  <div id="transactionLog"></div>
+  <button onclick="downloadCSV()">Download CSV</button>
+</body>
+</html>

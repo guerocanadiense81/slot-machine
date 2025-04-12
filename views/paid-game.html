@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Slot Machine - Paid Version</title>
+  <link rel="stylesheet" href="/paid.css">
+  <script src="/script.js" defer></script>
+  <script src="/game-logic.js" defer></script>
+  <script src="/wallet.js" defer></script>
+</head>
+<body>
+  <nav>
+    <a href="/index.html">Free Version</a> |
+    <a href="/paid-game.html">Paid Version</a> |
+    <a href="/contact.html">Contact</a> |
+    <a href="/admin.html">Admin</a>
+  </nav>
+  
+  <!-- Wallet Section -->
+  <div id="wallet">
+    <div id="metBalance">100</div>
+    <button id="connectWallet">Connect Wallet</button>
+    <button id="cashOutBtn">Cash Out</button>
+  </div>
+  
+  <!-- Game UI Panel -->
+  <div id="game-ui">
+    <div>Credits: <span id="credits-display">1000</span></div>
+    <div>
+      Bet: <input type="number" id="bet-input" value="50" min="1">
+    </div>
+    <div id="message-display"></div>
+  </div>
+  
+  <!-- Slot Machine Container -->
+  <div id="container">
+    <div class="window-border">
+      <div class="window">
+        <div class="outer-spacer"></div>
+        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-spacer"></div>
+        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-spacer"></div>
+        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-spacer"></div>
+        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-spacer"></div>
+        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-spacer"></div>
+      </div>
+    </div>
+    <input type="button" onclick="spin(this)" class="start-button" value="Spin"/>
+  </div>
+
+  <script>
+    // Bind cash out functionality – ensure cashOut() is defined in wallet.js
+    document.getElementById("cashOutBtn").addEventListener("click", async () => {
+      // Replace this with your actual calculation of MET amount
+      const metAmount = 100;
+      await cashOut(metAmount);
+    });
+  </script>
+</body>
+</html>

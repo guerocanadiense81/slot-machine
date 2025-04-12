@@ -1,0 +1,49 @@
+body {
+    background: #222;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+}
+
+input[type=number] {
+    padding: 10px;
+    font-size: 16px;
+    width: 150px;
+}
+
+button {
+    padding: 10px 15px;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    background: #FFD700;
+    border: none;
+    border-radius: 5px;
+}
+
+#transactionLog div {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #555;
+}

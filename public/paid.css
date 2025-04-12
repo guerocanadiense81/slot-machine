@@ -1,0 +1,37 @@
+@import url('style.css');
+
+/* Paid Version: Wallet and Additional Paid-Specific Overrides */
+
+/* Wallet Section Styling */
+#wallet {
+    margin: 20px auto;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+#connectWallet {
+    background: #f0ad4e;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+/* Cash Out Button Styling */
+#wallet button#cashOutBtn {
+    background: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+/* 
+  All other elements such as the background-body.png for the page,
+  background-slots.png for the slot machine container, and the sizing/positioning
+  of the slot machine and reels are inherited directly from style.css.
+*/
