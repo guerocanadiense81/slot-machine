@@ -1,118 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Slot Machine - Paid Version</title>
-  <link rel="stylesheet" href="/paid.css">
-  <!-- Include the UMD build of ethers.js -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="/script.js" defer></script>
-  <script src="/game-logic.js" defer></script>
-  <script src="/wallet.js" defer></script>
-</head>
-<body>
-  <nav>
-    <a href="/index.html">Free Version</a> |
-    <a href="/paid-game.html">Paid Version</a> |
-    <a href="/contact.html">Contact</a> |
-    <a href="/instructions.html">Instructions</a>
-  </nav>
-  
-  <!-- Wallet & Balance Section -->
-  <div id="wallet">
-    <div id="metBalance">
-      Off-chain Balance: <span id="credits-display">0</span> MET
-    </div>
-    <div>
-      On-chain MET: <span id="metOnChainBalance">0</span> MET
-    </div>
-    <button id="connectWallet">Connect Wallet</button>
-  </div>
-  
-  <!-- Deposit Section -->
-  <div id="depositSection">
-    <h3>Manual Deposit</h3>
-    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET">
-    <button onclick="manualDeposit()">Deposit MET</button>
-  </div>
-  
-  <!-- Reconciliation / Finish Game Section -->
-  <div id="cashOutSection">
-    <h3>Finish Game & Cash Out</h3>
-    <button onclick="reconcileSession()">Finish Game (Reconcile)</button>
-  </div>
-  
-  <!-- Game UI Panel -->
-  <div id="game-ui">
-    <div>
-      Bet: <input type="number" id="bet-input" value="50" min="1">
-    </div>
-    <div id="message-display"></div>
-  </div>
-  
-  <!-- Slot Machine Container -->
-  <div id="container">
-    <div class="window-border">
-      <div class="window">
-        <!-- 5 Reels total, each reel = .outer-col containing .col with 3 icons -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slot Machine - Paid Version</title>
+    <link rel="stylesheet" href="/paid.css" />
+    <!-- Include ethers.js UMD build -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="/script.js" defer></script>
+    <script src="/game-logic.js" defer></script>
+    <script src="/wallet.js" defer></script>
+  </head>
+  <body>
+    <nav>
+      <a href="/index.html">Free Version</a> |
+      <a href="/paid-game.html">Paid Version</a> |
+      <a href="/contact.html">Contact</a> |
+      <a href="/instructions.html">Instructions</a>
+    </nav>
 
-        <div class="outer-spacer"></div>
-        <!-- Reel 1 -->
-        <div class="outer-col">
-          <div class="col">
-            <!-- 3 icons for row 0, row 1, row 2 -->
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
-          </div>
-        </div>
-
-        <div class="outer-spacer"></div>
-        <!-- Reel 2 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-          </div>
-        </div>
-
-        <div class="outer-spacer"></div>
-        <!-- Reel 3 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-          </div>
-        </div>
-
-        <div class="outer-spacer"></div>
-        <!-- Reel 4 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-          </div>
-        </div>
-
-        <div class="outer-spacer"></div>
-        <!-- Reel 5 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
-          </div>
-        </div>
-
-        <div class="outer-spacer"></div>
+    <!-- Wallet & Balance Section -->
+    <div id="wallet">
+      <div id="metBalance">
+        Off-chain Balance: <span id="credits-display">0</span> MET
       </div>
+      <div>
+        On-chain MET: <span id="metOnChainBalance">0</span> MET
+      </div>
+      <button id="connectWallet">Connect Wallet</button>
     </div>
 
-    <input type="button" onclick="spin(this)" class="start-button" value="Spin"/>
-  </div>
-</body>
+    <!-- Deposit Section -->
+    <div id="depositSection">
+      <h3>Manual Deposit</h3>
+      <input
+        type="number"
+        id="depositInput"
+        placeholder="Enter deposit amount in MET"
+      />
+      <button onclick="manualDeposit()">Deposit MET</button>
+    </div>
+
+    <!-- Reconciliation / Finish Game Section -->
+    <div id="cashOutSection">
+      <h3>Finish Game & Cash Out</h3>
+      <button onclick="reconcileSession()">Finish Game (Reconcile)</button>
+    </div>
+
+    <!-- Game UI Panel -->
+    <div id="game-ui">
+      <div>
+        Bet: <input type="number" id="bet-input" value="50" min="1" />
+      </div>
+      <div id="message-display"></div>
+    </div>
+
+    <!-- Slot Machine Container (5 Reels) -->
+    <div id="container">
+      <div class="window-border">
+        <div class="window">
+          <div class="outer-spacer"></div>
+          <!-- Reel 1 -->
+          <div class="outer-col">
+            <div class="col">
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+              <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+              <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
+            </div>
+          </div>
+          <div class="outer-spacer"></div>
+          <!-- Reel 2 -->
+          <div class="outer-col">
+            <div class="col">
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            </div>
+          </div>
+          <div class="outer-spacer"></div>
+          <!-- Reel 3 -->
+          <div class="outer-col">
+            <div class="col">
+              <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+              <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            </div>
+          </div>
+          <div class="outer-spacer"></div>
+          <!-- Reel 4 -->
+          <div class="outer-col">
+            <div class="col">
+              <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+              <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            </div>
+          </div>
+          <div class="outer-spacer"></div>
+          <!-- Reel 5 -->
+          <div class="outer-col">
+            <div class="col">
+              <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+              <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+              <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
+            </div>
+          </div>
+          <div class="outer-spacer"></div>
+        </div>
+      </div>
+
+      <!-- Spin Button -->
+      <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
+    </div>
+  </body>
 </html>
