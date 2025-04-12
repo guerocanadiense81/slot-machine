@@ -3,8 +3,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
 
-  // Global variable to store off-chain balance (as a number)
+  // Global variables to store off-chain balance and the initial deposit for this session.
   window.offchainBalance = 0;
+  window.initialDeposit = 0;  // This should be set when the player starts the session.
 
   async function connectWalletAndLoadBalances() {
     console.log("Connect Wallet button clicked.");
@@ -30,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Fetch off-chain balance from the backend
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       if (!response.ok) throw new Error("Failed to load balance from server.");
-      
       const data = await response.json();
       console.log("Fetched off-chain balance:", data.balance);
       const creditsDisplay = document.getElementById("credits-display");
@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", () => {
         creditsDisplay.innerText = data.balance;
       }
       window.offchainBalance = parseFloat(data.balance) || 0;
+      // For this session, record the initial deposit.
+      window.initialDeposit = window.offchainBalance;
       
       // Fetch on-chain MET balance
       await getOnChainMETBalance();
@@ -75,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Attach connect wallet event handler
+  // Attach connect wallet button handler.
   const connectWalletBtn = document.getElementById("connectWallet");
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
@@ -84,8 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Connect Wallet button not found in DOM.");
   }
 
-  // Global function to update off-chain balance on the backend.
-  // Expects a relative change (positive to add, negative to subtract).
+  // Global function: update off-chain balance using a relative change.
   window.updateInGameBalance = async function(balanceChange) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -110,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Global function for manual deposit
+  // Global function: manual deposit
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     if (!depositInput) {
@@ -123,36 +124,46 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     console.log("Depositing MET. Current balance:", window.offchainBalance, "Deposit amount:", depositAmount);
-    // Update backend by adding depositAmount
+    // Update off-chain balance by adding the deposit amount.
     await window.updateInGameBalance(depositAmount);
     alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
   };
 
-  // Global function for cash out (initiated by the player)
-  window.cashOut = async function() {
+  // Global function: cash out (final reconciliation)
+  // This calls the /api/player/reconcile endpoint with the initial deposit and current off-chain balance.
+  window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
       return;
     }
     try {
-      const response = await fetch(`/api/admin/cashout`, {
+      const payload = {
+        wallet: window.userWallet,
+        initialDeposit: window.initialDeposit,
+        finalBalance: window.offchainBalance
+      };
+      const response = await fetch("/api/player/reconcile", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("adminToken") },
-        body: JSON.stringify({ wallet: window.userWallet })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
       if (!response.ok) {
-        throw new Error("Cash out failed.");
+        throw new Error("Reconciliation failed.");
       }
       const data = await response.json();
-      alert("Cash out of " + data.cashedOut + " MET processed. Off-chain balance is now 0.");
-      const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) {
-        creditsDisplay.innerText = "0";
-      }
-      window.offchainBalance = 0;
+      alert("Session reconciled. " + data.message);
+      // For example, if the net change is negative (loss), this would be reflected on-chain.
     } catch (error) {
-      console.error("Error during cash out:", error);
-      alert("Error during cash out. Check console for details.");
+      console.error("Error during session reconciliation:", error);
+      alert("Error during reconciliation. Check console for details.");
     }
   };
+
+  // Option: Trigger reconciliation when the player leaves the page.
+  // (Be careful with this in production; onbeforeunload may not always allow async calls.)
+  window.addEventListener("beforeunload", () => {
+    // It's better to have the player click a "Finish Game" or "Cash Out" button.
+    // Uncomment the line below if you truly want automatic reconciliation.
+    // window.reconcileSession();
+  });
 });
