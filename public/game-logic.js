@@ -1,72 +1,95 @@
 // public/game-logic.js
 
-// Global toggles: set to true to disable the corresponding win condition.
-let pause5InRow = false;  // Full row match win (5-in-a-row)
-let pause3InRow = false;  // Any three consecutive matching icons in a row win (3-in-a-row)
-let pause2InRow = false;  // 2-in-a-row win on the middle row (row index 1) with multiplier 0.25
+// Global toggles to pause win conditions (set to true to disable that win check)
+let pause5InRow = false;   // Pause full-row (5-in-a-row) win logic if true.
+let pause3InRow = false;   // Pause three consecutive match win logic if true.
+let pause2InRow = false;   // Pause 2-in-a-row win logic for the middle row if true.
 
 /**
- * Main win-check function. Assumes that each reel (element with class "col")
- * shows 3 icons (rows 0, 1, and 2). The function iterates over each row,
- * checks for the different win conditions, sums up the multipliers, and calculates
- * the winnings as (bet * total multiplier). It then updates the off‑chain balance.
+ * checkWin - Checks all rows for winning conditions and updates off-chain balance.
+ *   The following win conditions are checked per row:
+ *   1. 5-in-a-row: If all reels for the row have the same symbol,
+ *      multiplier = 10 if symbol is "big_win", otherwise 5.
+ *   2. 3-in-a-row: If any three consecutive reels in the row match, multiplier = 2.
+ *   3. 2-in-a-row on middle row (row index 1): If any two consecutive match, multiplier = 0.25.
+ * All multipliers are summed and the total win is (bet * totalMultiplier).
  */
 function checkWin() {
   const reels = document.querySelectorAll('.col');
   let totalMultiplier = 0;
   
-  // Assume there are 3 rows per reel (indexes 0, 1, and 2)
+  // For debugging: log number of reels
+  console.log(`Detected ${reels.length} reels in the game.`);
+  
+  // We assume each reel has at least 3 icons (rows 0, 1, and 2)
   for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
     let rowSymbols = [];
-    
-    // For each reel, get the icon in this row (if available)
-    reels.forEach(reel => {
+    reels.forEach((reel, reelIndex) => {
       const icons = reel.querySelectorAll('.icon img');
-      if (icons && icons.length > rowIndex) {
-        // Extract symbol name from the src: e.g., "items/cherry.png" -> "cherry"
+      if (icons.length > rowIndex) {
         const src = icons[rowIndex].getAttribute("src");
         const symbol = src.split('/').pop().split('.')[0];
         rowSymbols.push(symbol);
+        console.log(`Reel ${reelIndex} row ${rowIndex}: ${symbol}`);
+      } else {
+        console.warn(`Reel ${reelIndex} does not have a row at index ${rowIndex}`);
       }
     });
-    
-    // --- 5-in-a-row win: all reels in the row match.
-    if (!pause5InRow && rowSymbols.length === reels.length && rowSymbols.every(s => s && s === rowSymbols[0])) {
-      let multiplier5 = (rowSymbols[0] === 'big_win') ? 10 : 5;
-      console.log(`Row ${rowIndex} full match with symbol "${rowSymbols[0]}" wins with multiplier: ${multiplier5}`);
+
+    // 5-in-a-row win check: All symbols in this row match.
+    if (!pause5InRow && rowSymbols.length === reels.length && rowSymbols.every(s => s === rowSymbols[0])) {
+      let multiplier5 = rowSymbols[0] === 'big_win' ? 10 : 5;
+      console.log(`Row ${rowIndex} full match detected with symbol "${rowSymbols[0]}". Multiplier: ${multiplier5}`);
       totalMultiplier += multiplier5;
+    } else {
+      console.log(`Row ${rowIndex} full match not detected. Symbols: [${rowSymbols.join(', ')}]`);
     }
-    
-    // --- 3-in-a-row win: any three consecutive matching icons in the row.
+
+    // 3-in-a-row win check: Check for any three consecutive matching symbols.
     if (!pause3InRow && rowSymbols.length >= 3) {
+      let found3 = false;
       for (let i = 0; i <= rowSymbols.length - 3; i++) {
         if (rowSymbols[i] && rowSymbols[i] === rowSymbols[i+1] && rowSymbols[i] === rowSymbols[i+2]) {
-          console.log(`Row ${rowIndex} 3-in-a-row starting at reel ${i} wins with multiplier 2`);
+          console.log(`Row ${rowIndex}: 3-in-a-row detected at reels ${i}-${i+2} (symbol: ${rowSymbols[i]}), +2 multiplier`);
           totalMultiplier += 2;
-          break; // Count only one instance per row.
+          found3 = true;
+          break;
         }
       }
+      if (!found3) console.log(`Row ${rowIndex}: No 3-in-a-row found.`);
     }
-    
-    // --- 2-in-a-row win on middle row: only for rowIndex 1.
+
+    // 2-in-a-row win for middle row (rowIndex === 1)
     if (!pause2InRow && rowIndex === 1 && rowSymbols.length >= 2) {
+      let found2 = false;
       for (let i = 0; i <= rowSymbols.length - 2; i++) {
         if (rowSymbols[i] && rowSymbols[i] === rowSymbols[i+1]) {
-          console.log(`Middle row has 2-in-a-row at reels ${i} and ${i+1} wins with multiplier 0.25`);
+          console.log(`Middle row: 2-in-a-row detected at reels ${i} and ${i+1} (symbol: ${rowSymbols[i]}), +0.25 multiplier`);
           totalMultiplier += 0.25;
-          break; // Only count one instance.
+          found2 = true;
+          break;
         }
       }
+      if (!found2) console.log(`Middle row: No 2-in-a-row found.`);
     }
-  }
+  } // End for each row
+
+  console.log(`Total multiplier for win conditions: ${totalMultiplier}`);
   
-  // Now compute the winnings.
+  // If any win conditions met, calculate winnings.
   if (totalMultiplier > 0) {
     const betInput = document.getElementById("bet-input");
-    const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
+    let betAmount = 50; // default bet
+    if (betInput) {
+      const val = parseFloat(betInput.value);
+      if (!isNaN(val)) {
+        betAmount = val;
+      }
+    }
     const winnings = betAmount * totalMultiplier;
-    console.log(`Total multiplier: ${totalMultiplier}, Bet: ${betAmount}, Winnings: ${winnings} MET`);
+    console.log(`Calculated winnings: ${winnings} MET (bet: ${betAmount} MET * multiplier: ${totalMultiplier})`);
     
+    // Update off-chain balance with winnings
     if (typeof window.updateInGameBalance === "function") {
       window.updateInGameBalance(winnings);
     }
@@ -77,8 +100,7 @@ function checkWin() {
   }
 }
 
-// Placeholder function for displaying a message on screen.
-// Replace or extend as needed.
+// --- Placeholder Functions for UI Feedback ---
 function showMessage(message, isWin) {
   const display = document.getElementById("message-display");
   if (display) {
@@ -91,7 +113,6 @@ function showMessage(message, isWin) {
   }
 }
 
-// Placeholder for win animation (e.g., particle effect)
 function triggerWinAnimation() {
   const container = document.getElementById("container");
   if (!container) return;
@@ -110,20 +131,21 @@ function triggerWinAnimation() {
   }, 2000);
 }
 
-/*
-  Wrap the original spin() function (assumed to exist on window) to deduct the bet amount before spinning.
-  This code calls updateInGameBalance() to subtract the bet from the off-chain balance.
-*/
+// --- Wrap the Original spin() Function ---
 const originalSpin = window.spin;
 window.spin = function(elem) {
-  if (window.offchainBalance === undefined || window.offchainBalance <= 0) {
+  // Deduct bet amount before spinning.
+  const betInput = document.getElementById("bet-input");
+  const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
+  
+  // Ensure player has enough balance.
+  if (window.offchainBalance <= 0) {
     showMessage("Not enough tokens", false);
     return;
   }
-  const betInput = document.getElementById("bet-input");
-  const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
-  // Deduct the bet amount from the virtual balance.
+  console.log(`Deducting bet of ${betAmount} MET from off-chain balance.`);
   window.updateInGameBalance(-betAmount);
-  // Call the original spin function to run the animation and eventually call checkWin() via setResult.
+  
+  // Proceed with original spin logic.
   originalSpin(elem);
 };
