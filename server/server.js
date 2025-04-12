@@ -1,12 +1,10 @@
 // server/server.js
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { ethers } = require("ethers");
 
@@ -17,12 +15,11 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from sibling folders (since server.js is in /server)
+// Serve static files (since server.js is in /server, use ../)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Home route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
@@ -30,11 +27,11 @@ app.get('/', (req, res) => {
 /* =====================================================
    On-chain Settlement Setup via ethers.js
    ===================================================== */
-// Initialize ethers provider and signer for your house wallet
+// Set up ethers provider and signer (house wallet)
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Minimal ABI for winBet and loseBet functions in your MET token contract.
+// Minimal ABI including winBet and loseBet
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -43,30 +40,20 @@ const MET_CONTRACT_ADDRESS = process.env.MET_CONTRACT_ADDRESS;
 const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
 
 /* =====================================================
-   Off-chain Virtual Balance & Transaction Logging
+   Off-chain Virtual Balance & Logging
    ===================================================== */
-// In-memory user balances (keyed by wallet address)
-const userBalances = {};
-// Global aggregated losses (house funds)
-let houseFunds = 0;
-// In-memory array to log transactions
-let transactions = [];
+const userBalances = {};  // Off-chain balances
+let houseFunds = 0;       // Aggregated losses
+let transactions = [];    // In-memory transaction log
 
-// GET player's off-chain balance
+// GET a player's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
   res.json({ wallet, balance });
 });
 
-/*
-  POST /api/user/:walletAddress
-  Expects { "balanceChange": <number> }
-  Updates the player's off-chain balance relative to the current balance.
-  Ensures balance does not drop below 0.
-  Negative changes are added to houseFunds.
-  A log entry is pushed to the transactions array.
-*/
+// POST: Update player's off-chain balance (relative change)
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { balanceChange } = req.body;
@@ -84,13 +71,15 @@ app.post('/api/user/:walletAddress', (req, res) => {
   if (change < 0) {
     houseFunds += Math.abs(change);
   }
-  // Log the transaction
-  transactions.push({
+  // Log this transaction.
+  const logEntry = {
     address: wallet,
     amount: change.toString(),
-    status: (change < 0) ? "loss" : (change > 0 ? "win" : "neutral"),
+    status: change < 0 ? "loss" : (change > 0 ? "win" : "neutral"),
     date: new Date()
-  });
+  };
+  transactions.push(logEntry);
+  console.log("Transaction logged:", logEntry);
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
@@ -99,7 +88,87 @@ app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
-// GET /api/admin/house-funds – returns aggregated house funds (protected by JWT)
+// Download transactions as CSV and reset the log.
+app.get('/api/download-transactions', (req, res) => {
+  let csvContent = "Address,Amount MET,Status,Date,TxHash\n";
+  transactions.forEach(tx => {
+    csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date.toISOString()},${tx.txHash || ""}\n`;
+  });
+  const filePath = path.join(__dirname, '../transactions.csv');
+  fs.writeFileSync(filePath, csvContent);
+  res.download(filePath, 'transactions.csv', (err) => {
+    if (err) {
+      console.error("Error downloading transactions:", err);
+    } else {
+      console.log("Transactions downloaded successfully, resetting logs.");
+      transactions = [];
+    }
+    fs.unlinkSync(filePath);
+  });
+});
+
+/*
+  POST /api/player/reconcile
+  Expects JSON: { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
+  Computes: netChange = finalBalance - initialDeposit.
+  If netChange > 0, calls winBet() (transfers net win tokens from house to player).
+  If netChange < 0, calls loseBet() (deducts net loss tokens from player on-chain).
+*/
+app.post('/api/player/reconcile', async (req, res) => {
+  const { wallet, initialDeposit, finalBalance } = req.body;
+  if (!wallet || initialDeposit === undefined || finalBalance === undefined) {
+    return res.status(400).json({ error: "wallet, initialDeposit, and finalBalance are required" });
+  }
+  const normalizedWallet = wallet.toLowerCase();
+  const netChange = parseFloat(finalBalance) - parseFloat(initialDeposit);
+  console.log(`Reconciling ${normalizedWallet}: initial = ${initialDeposit}, final = ${finalBalance}, netChange = ${netChange}`);
+  let txResult = null;
+  try {
+    if (netChange > 0) {
+      console.log(`Calling winBet() for net win of ${netChange} MET to ${normalizedWallet}`);
+      txResult = await metContract.winBet(normalizedWallet, ethers.utils.parseUnits(netChange.toString(), 18));
+    } else if (netChange < 0) {
+      console.log(`Calling loseBet() for net loss of ${Math.abs(netChange)} MET from ${normalizedWallet}`);
+      txResult = await metContract.loseBet(normalizedWallet, ethers.utils.parseUnits(Math.abs(netChange).toString(), 18));
+    } else {
+      return res.json({
+        wallet: normalizedWallet,
+        netChange,
+        message: "No net change; no on-chain settlement necessary."
+      });
+    }
+    console.log("Awaiting transaction confirmation...");
+    const receipt = await txResult.wait();
+    console.log("Transaction confirmed: ", receipt.transactionHash);
+    // Log the reconciliation transaction.
+    transactions.push({
+      address: normalizedWallet,
+      amount: netChange.toString(),
+      status: netChange < 0 ? "net loss" : "net win",
+      date: new Date(),
+      txHash: receipt.transactionHash
+    });
+    res.json({
+      wallet: normalizedWallet,
+      initialDeposit,
+      finalBalance,
+      netChange,
+      txHash: receipt.transactionHash,
+      message: netChange < 0
+        ? `Player lost ${Math.abs(netChange)} MET; on-chain deduction executed.`
+        : `Player won ${netChange} MET; on-chain transfer executed.`
+    });
+  } catch (error) {
+    console.error("On-chain settlement failed:", error);
+    res.status(500).json({ error: "On-chain settlement failed", details: error.message });
+  }
+});
+
+/* =====================================================
+   Admin Endpoints
+   ===================================================== */
+
+// GET /api/admin/house-funds (Protected by JWT)
 app.get('/api/admin/house-funds', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -114,7 +183,7 @@ app.get('/api/admin/house-funds', (req, res) => {
   res.json({ houseFunds: houseFunds.toString() });
 });
 
-// POST /api/admin/cashout-house – resets houseFunds to 0 (protected by JWT)
+// POST /api/admin/cashout-house (Protected by JWT)
 app.post('/api/admin/cashout-house', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -134,64 +203,8 @@ app.post('/api/admin/cashout-house', (req, res) => {
   res.json({ cashedOut: cashedOut.toString() });
 });
 
-/*
-  POST /api/player/reconcile
-  Expects { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
-  Calculates netChange = finalBalance - initialDeposit.
-  If netChange > 0, calls winBet() (transfers extra tokens from house wallet to player).
-  If netChange < 0, calls loseBet() (transfers tokens from player's wallet to house wallet).
-  Returns transaction receipt and a message.
-*/
-app.post('/api/player/reconcile', async (req, res) => {
-  const { wallet, initialDeposit, finalBalance } = req.body;
-  if (!wallet || initialDeposit === undefined || finalBalance === undefined) {
-    return res.status(400).json({ error: "wallet, initialDeposit, and finalBalance are required" });
-  }
-  const normalizedWallet = wallet.toLowerCase();
-  const netChange = parseFloat(finalBalance) - parseFloat(initialDeposit);
-  let txResult = null;
-  try {
-    if (netChange > 0) {
-      console.log(`winBet: Transferring net win of ${netChange} MET to ${normalizedWallet}`);
-      txResult = await metContract.winBet(normalizedWallet, ethers.utils.parseUnits(netChange.toString(), 18));
-    } else if (netChange < 0) {
-      console.log(`loseBet: Transferring net loss of ${Math.abs(netChange)} MET from ${normalizedWallet}`);
-      txResult = await metContract.loseBet(normalizedWallet, ethers.utils.parseUnits(Math.abs(netChange).toString(), 18));
-    } else {
-      return res.json({
-        wallet: normalizedWallet,
-        netChange,
-        message: "No net change. Off-chain balance equals initial deposit."
-      });
-    }
-    console.log("Awaiting on-chain transaction confirmation...");
-    const receipt = await txResult.wait();
-    // Log the reconciliation transaction.
-    transactions.push({
-      address: normalizedWallet,
-      amount: netChange.toString(),
-      status: netChange < 0 ? "net loss" : "net win",
-      date: new Date(),
-      txHash: receipt.transactionHash
-    });
-    res.json({
-      wallet: normalizedWallet,
-      initialDeposit,
-      finalBalance,
-      netChange,
-      txHash: receipt.transactionHash,
-      message: netChange < 0
-        ? `Player lost ${Math.abs(netChange)} MET; on-chain deduction applied.`
-        : `Player won ${netChange} MET; on-chain transfer executed.`
-    });
-  } catch (error) {
-    console.error("On-chain settlement failed:", error);
-    res.status(500).json({ error: "On-chain settlement failed", details: error.message });
-  }
-});
-
 /* =====================================================
-   Other Endpoints
+   Other Endpoints (Win Percentage, Admin Login, etc.)
    ===================================================== */
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 
@@ -209,7 +222,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Admin login endpoint: returns a JWT token.
+// Admin login endpoint (returns a JWT token)
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -218,25 +231,6 @@ app.post("/admin/login", (req, res) => {
   } else {
     res.status(401).json({ success: false, message: "Unauthorized" });
   }
-});
-
-// Download transactions endpoint: returns a CSV and resets the transactions array.
-app.get('/api/download-transactions', (req, res) => {
-  let csvContent = "Address,Amount MET,Status,Date,TxHash\n";
-  transactions.forEach(tx => {
-    csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date.toISOString()},${tx.txHash || ""}\n`;
-  });
-  const filePath = path.join(__dirname, '../transactions.csv');
-  fs.writeFileSync(filePath, csvContent);
-  res.download(filePath, 'transactions.csv', (err) => {
-    if (err) {
-      console.error("Error downloading transactions:", err);
-    } else {
-      console.log("Transactions downloaded successfully, resetting logs.");
-      transactions = []; // Reset the in-memory logs after download
-    }
-    fs.unlinkSync(filePath);
-  });
 });
 
 app.listen(PORT, () => {
