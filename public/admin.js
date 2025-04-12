@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ADMIN PANEL LOGIC (for admin.html)
   if (isAdminPanel) {
-    // If no admin token is found, redirect to the login page.
     const token = getToken();
     if (!token) {
       alert("You must be logged in as admin to view this page.");
@@ -53,13 +52,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // Fetch and display the current house funds.
+    // Function to fetch and display the aggregated house funds
     async function fetchHouseFunds() {
       try {
         const res = await fetch("/api/admin/house-funds", {
           headers: { "Authorization": "Bearer " + token }
         });
+        if (!res.ok) {
+          console.error("Failed to fetch house funds.");
+          return;
+        }
         const data = await res.json();
+        console.log("House funds fetched:", data);
         const houseFundsDisplay = document.getElementById("houseFundsDisplay");
         if (houseFundsDisplay) {
           houseFundsDisplay.innerText = data.houseFunds;
@@ -70,34 +74,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     fetchHouseFunds();
 
-    // Cash-out button handler to withdraw all house funds.
+    // Cash-out button handler for the aggregated house funds.
     const cashOutHouseBtn = document.getElementById("cashOutHouseButton");
-    cashOutHouseBtn.addEventListener("click", async () => {
-      try {
-        const response = await fetch("/api/admin/cashout-house", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + token
-          },
-          body: JSON.stringify({}) // No additional data needed
-        });
-        if (!response.ok) {
-          const errData = await response.json();
-          document.getElementById("houseCashoutMessage").innerText = "Cash out failed: " + errData.error;
-          return;
+    if (cashOutHouseBtn) {
+      cashOutHouseBtn.addEventListener("click", async () => {
+        try {
+          const response = await fetch("/api/admin/cashout-house", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({}) // no additional data required
+          });
+          if (!response.ok) {
+            const errData = await response.json();
+            document.getElementById("houseCashoutMessage").innerText = "Cash out failed: " + errData.error;
+            return;
+          }
+          const result = await response.json();
+          document.getElementById("houseCashoutMessage").innerText = "Cash out of " + result.cashedOut + " MET processed.";
+          // Refresh the house funds display
+          fetchHouseFunds();
+        } catch (error) {
+          console.error("Error during house funds cash out:", error);
+          document.getElementById("houseCashoutMessage").innerText = "Error during cash out. Check console for details.";
         }
-        const result = await response.json();
-        document.getElementById("houseCashoutMessage").innerText = "Cash out of " + result.cashedOut + " MET processed.";
-        // Refresh the displayed house funds.
-        fetchHouseFunds();
-      } catch (error) {
-        console.error("Error during house funds cash out:", error);
-        document.getElementById("houseCashoutMessage").innerText = "Error during cash out. Check console for details.";
-      }
-    });
+      });
+    } else {
+      console.error("Cash out button not found in admin panel.");
+    }
 
-    // Optionally implement logout functionality.
+    // Logout functionality.
     const logoutBtn = document.getElementById("logoutButton");
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
@@ -106,11 +114,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Fetch transaction logs (if your API endpoint exists)
+    // Fetch transaction logs to display.
     async function fetchTransactionLogs() {
       try {
         const res = await fetch("/api/transactions");
+        if (!res.ok) {
+          console.error("Failed to fetch transactions.");
+          return;
+        }
         const data = await res.json();
+        console.log("Fetched transaction logs:", data);
         const logContainer = document.getElementById("logContainer");
         if (logContainer) {
           if (data.transactions && data.transactions.length > 0) {
