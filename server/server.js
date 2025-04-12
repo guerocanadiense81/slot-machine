@@ -1,5 +1,4 @@
 // server/server.js
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -8,7 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-// For on-chain interactions
 const { ethers } = require("ethers");
 
 const app = express();
@@ -18,12 +16,12 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from views, public, and items (using "../" because server.js is in /server)
+// Serve static files (since server.js is in the "server" folder, use "../" to refer to sibling folders)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Home route serving index.html
+// Home route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
@@ -32,11 +30,11 @@ app.get('/', (req, res) => {
    On-chain Settlement Setup via ethers.js
    ===================================================== */
 
-// Create a provider and a signer (house wallet) using the BSC_RPC_URL and PRIVATE_KEY.
+// Create an ethers provider and house signer (using PRIVATE_KEY)
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Minimal ABI: we assume your MET token contract provides winBet and loseBet methods.
+// Minimal ABI for winBet and loseBet functions
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -45,17 +43,17 @@ const MET_CONTRACT_ADDRESS = process.env.MET_CONTRACT_ADDRESS;
 const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
 
 /* =====================================================
-   Off-chain Virtual Credit Endpoints & Transaction Logging
+   Off-chain Virtual Balance & Transaction Log Endpoints
    ===================================================== */
 
-// In-memory store for individual user balances (keyed by wallet address)
-const userBalances = {};
-// Global variable to accumulate losses (i.e. funds for the house)
-let houseFunds = 0;
-// In-memory transaction log (an array of transaction objects)
+// In-memory store for each player’s balance (keyed by wallet address)
+const userBalances = {};  
+// Global variable to aggregate losses (house funds)
+let houseFunds = 0;  
+// In-memory transaction log array
 let transactions = [];
 
-// GET a user's off-chain balance
+// GET: Retrieve a player's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
@@ -63,12 +61,11 @@ app.get('/api/user/:walletAddress', (req, res) => {
 });
 
 /*
-  POST /api/user/:walletAddress 
-  Expects JSON: { "balanceChange": <number> }
-  Updates the player's off-chain balance relative to the current balance.
-  If the balance would drop below 0, it is set to 0.
-  Negative changes (losses) are added to houseFunds.
-  A transaction log is recorded.
+  POST: Update a player's off-chain balance by a relative change.
+  Expects { "balanceChange": <number> }.
+  Prevents balance from going below 0.
+  Negative changes are added to houseFunds.
+  Each update is logged in the transaction log.
 */
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -87,30 +84,33 @@ app.post('/api/user/:walletAddress', (req, res) => {
   if (change < 0) {
     houseFunds += Math.abs(change);
   }
-  // Record transaction log entry
+  // Log the transaction
   transactions.push({
     address: wallet,
     amount: change.toString(),
-    status: (change < 0) ? "loss" : (change > 0 ? "win" : "neutral"),
+    status: change < 0 ? "loss" : (change > 0 ? "win" : "neutral"),
     date: new Date()
   });
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
-// GET transaction logs
+// GET: Return transaction logs
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
 /*
-  POST /api/player/reconcile 
-  Reconciles a player's session by calculating:
-    netChange = finalBalance - initialDeposit
+  POST /api/player/reconcile
+  Called when a player finishes their session.
+  Expects:
+    { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
+  Calculates netChange = finalBalance - initialDeposit.
+    • netChange > 0 means the player won extra tokens.
+    • netChange < 0 means the player lost tokens.
   Then triggers on-chain settlement:
-    - If netChange > 0, calls winBet() (transfer MET from house wallet to player)
-    - If netChange < 0, calls loseBet() (transfer MET from player's wallet to house wallet)
-  For demonstration, on-chain transfers are simulated.
-  Expects JSON: { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
+    • winBet() if netChange > 0
+    • loseBet() if netChange < 0
+  Returns the transaction receipt and a message.
 */
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet, initialDeposit, finalBalance } = req.body;
@@ -122,21 +122,21 @@ app.post('/api/player/reconcile', async (req, res) => {
   let txResult = null;
   try {
     if (netChange > 0) {
-      console.log(`winBet: Transferring ${netChange} MET from house wallet to ${normalizedWallet}`);
+      console.log(`winBet: Awarding net win of ${netChange} MET to ${normalizedWallet}`);
       txResult = await metContract.winBet(normalizedWallet, ethers.utils.parseUnits(netChange.toString(), 18));
     } else if (netChange < 0) {
-      console.log(`loseBet: Transferring ${Math.abs(netChange)} MET from ${normalizedWallet} to house wallet`);
+      console.log(`loseBet: Deducting net loss of ${Math.abs(netChange)} MET from ${normalizedWallet}`);
       txResult = await metContract.loseBet(normalizedWallet, ethers.utils.parseUnits(Math.abs(netChange).toString(), 18));
     } else {
       return res.json({
         wallet: normalizedWallet,
         netChange,
-        message: "No net change, no on-chain settlement necessary."
+        message: "No net change. Off-chain balance equals initial deposit."
       });
     }
-    console.log("Awaiting on-chain confirmation...");
+    console.log("Awaiting on-chain transaction confirmation...");
     const receipt = await txResult.wait();
-    // Log reconciliation transaction.
+    // Log reconciliation transaction
     transactions.push({
       address: normalizedWallet,
       amount: netChange.toString(),
@@ -151,8 +151,8 @@ app.post('/api/player/reconcile', async (req, res) => {
       netChange,
       txHash: receipt.transactionHash,
       message: netChange < 0
-        ? `Player lost ${Math.abs(netChange)} MET; on-chain deducted from player and sent to house wallet.`
-        : `Player won ${netChange} MET; on-chain transferred from house wallet to player.`
+        ? `Player lost ${Math.abs(netChange)} MET; on-chain deduction applied.`
+        : `Player won ${netChange} MET; on-chain transfer executed.`
     });
   } catch (error) {
     console.error("On-chain settlement failed:", error);
@@ -160,13 +160,14 @@ app.post('/api/player/reconcile', async (req, res) => {
   }
 });
 
-/* --------------------------------------------------
+/* =====================================================
    Admin Endpoints
-   -------------------------------------------------- */
+   ===================================================== */
 
 /*
-  GET /api/admin/house-funds
-  Protected by JWT; returns aggregated houseFunds.
+  GET /api/admin/house-funds 
+  Returns the aggregated house funds.
+  Protected by JWT.
 */
 app.get('/api/admin/house-funds', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -183,9 +184,10 @@ app.get('/api/admin/house-funds', (req, res) => {
 });
 
 /*
-  POST /api/admin/cashout-house
-  Protected by JWT; resets houseFunds to 0.
-  In production, this would trigger an on-chain transfer from the house wallet.
+  POST /api/admin/cashout-house 
+  Resets houseFunds to 0.
+  Protected by JWT.
+  In production, this should trigger an on-chain transfer from the house wallet.
 */
 app.post('/api/admin/cashout-house', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -206,9 +208,9 @@ app.post('/api/admin/cashout-house', (req, res) => {
   res.json({ cashedOut: cashedOut.toString() });
 });
 
-/* --------------------------------------------------
+/* =====================================================
    Other Endpoints (Win Percentage, Admin Login, etc.)
-   -------------------------------------------------- */
+   ===================================================== */
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 
 app.get('/api/get-win-percentage', (req, res) => {
@@ -225,7 +227,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Admin login endpoint: returns a JWT token.
+// Admin login endpoint (returns a JWT token).
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -235,8 +237,6 @@ app.post("/admin/login", (req, res) => {
     res.status(401).json({ success: false, message: "Unauthorized" });
   }
 });
-
-// (Optional: additional endpoints such as for recording transactions can be added here.)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
