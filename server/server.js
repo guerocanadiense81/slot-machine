@@ -14,13 +14,13 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 // Serve static files from "views", "public", and mount "items" at /items
-app.use(express.static(path.join(__dirname, 'views')));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/items', express.static(path.join(__dirname, 'items')));
+app.use(express.static(path.join(__dirname, '../views')));
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/items', express.static(path.join(__dirname, '../items')));
 
 // Explicit route for the home page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  res.sendFile(path.join(__dirname, 'views', '../index.html'));
 });
 
 // In-memory storage for win percentage and transactions
