@@ -1,46 +1,44 @@
 // public/game-logic.js
 
-// Check which version of the game is being run based on the URL.
-let defaultCredits = 1000; // default for free version
-if (window.location.pathname.includes("paid-game.html")) {
-  // For paid version, we set the default credit to 0 until wallet connection loads the actual balance.
-  defaultCredits = 0;
-}
+// Detect if this is the paid version by checking the URL. For paid version, use the off-chain balance.
+let isPaidVersion = window.location.pathname.includes("paid-game.html");
 
-let credits = defaultCredits;  // in-game credit balance
-let bet = 50;                  // Default bet amount for both versions
+// For the free version, we use a fixed default; for the paid version, the balance will be loaded via wallet.js.
+let credits = isPaidVersion ? (window.offchainBalance || 0) : 1000;
+let bet = 50;  // Default bet amount
 
+// We'll update the UI using the element with id "credits-display"
 const creditsDisplayElement = document.getElementById('credits-display');
 const betInput = document.getElementById('bet-input');
 const messageDisplay = document.getElementById('message-display');
 
-// Function to update the displayed credits.
+// Function to update the displayed virtual credits.
 function updateCreditsDisplay() {
   if (creditsDisplayElement) {
-    creditsDisplayElement.textContent = credits;
+    creditsDisplayElement.innerText = credits;
   }
 }
 
-// Set the initial display based on the defaultCredits variable.
+// Initially, update the display
 updateCreditsDisplay();
 
-// Wrap original setResult function (assuming it exists in the reel engine code)
+// Wrap the original setResult function (assuming your reel animation engine provides it)
 const originalSetResult = window.setResult;
 window.setResult = function() {
   originalSetResult();
-  // Delay win check to allow animations to settle
+  // Wait a bit for the animations to settle, then check win conditions.
   setTimeout(checkWin, 200);
 };
 
-// Function to check win conditions and update credits accordingly.
+// Function to determine if the spin was a win and update credits accordingly.
 function checkWin() {
   const cols = document.querySelectorAll('.col');
   let results = [];
   cols.forEach(col => {
     const icons = col.querySelectorAll('.icon img');
-    // Assume the visible middle icon is at index 1
+    // Assume the middle visible icon is at index 1
     const src = icons[1].getAttribute('src');
-    // Extract the icon name, assuming a path like "items/apple.png"
+    // Extract the icon name from something like "items/apple.png"
     const parts = src.split('/');
     const fileName = parts[parts.length - 1];
     const iconName = fileName.split('.')[0];
@@ -49,11 +47,11 @@ function checkWin() {
 
   let multiplier = 0;
 
-  // Check for a "5 in a row" condition.
+  // Check for a 5-in-a-row win.
   if (results.every(icon => icon === results[0])) {
     multiplier = (results[0] === 'big_win') ? 10 : 5;
   } else {
-    // Otherwise, check for any "3 consecutive matching" icons.
+    // Check for any 3 consecutive matching icons.
     for (let i = 0; i <= results.length - 3; i++) {
       if (results[i] === results[i+1] && results[i] === results[i+2]) {
         multiplier = 2;
@@ -63,7 +61,7 @@ function checkWin() {
   }
 
   if (multiplier > 0) {
-    const winnings = bet * multiplier;
+    let winnings = bet * multiplier;
     credits += winnings;
     showMessage(`You win! +${winnings} credits`, true);
     triggerWinAnimation();
@@ -71,10 +69,14 @@ function checkWin() {
     showMessage('You lose!', false);
   }
 
+  // Update the UI and inform the backend for paid version.
   updateCreditsDisplay();
+  if (isPaidVersion && window.updateInGameBalance) {
+    window.updateInGameBalance(credits.toString());
+  }
 }
 
-// Function to display win/loss messages.
+// Display win/loss messages.
 function showMessage(msg, isWin) {
   if (!messageDisplay) return;
   messageDisplay.textContent = msg;
@@ -85,7 +87,7 @@ function showMessage(msg, isWin) {
   }, 3000);
 }
 
-// Listen for bet input changes.
+// Listen for changes in bet input.
 if (betInput) {
   betInput.addEventListener('change', (e) => {
     const val = parseInt(e.target.value, 10);
@@ -98,39 +100,39 @@ if (betInput) {
   });
 }
 
-// Wrap the original spin function for bet deduction and balance update.
+// Wrap the original spin function to deduct the bet from the off-chain credits.
 const originalSpin = window.spin;
 window.spin = function(elem) {
-  // For the paid version, ensure wallet connection has been established.
-  // For free version, credits are preset.
-  if (window.location.pathname.includes("paid-game.html")) {
-    // If paid version, check if wallet connection is available before allowing a spin.
-    if (!window.userWallet) {
-      showMessage("Please connect your wallet first.", false);
-      return;
-    }
-  }
-  
-  // Check if there are enough credits to place the bet.
-  if (credits < bet) {
-    showMessage('Not enough credits!', false);
+  // For the paid version, ensure the wallet is connected.
+  if (isPaidVersion && !window.userWallet) {
+    showMessage("Please connect your wallet first.", false);
     return;
   }
-  // Deduct the bet amount.
+  
+  // Check if the current balance is enough for the bet.
+  if (credits < bet) {
+    showMessage("Not enough credits!", false);
+    return;
+  }
+  
+  // Deduct the bet.
   credits -= bet;
   updateCreditsDisplay();
-  // Clear any previous message.
-  if (messageDisplay) {
-    messageDisplay.textContent = '';
+  if (isPaidVersion && window.updateInGameBalance) {
+    window.updateInGameBalance(credits.toString());
   }
-  // Call the original spin function.
+  
+  // Clear previous messages.
+  if (messageDisplay) { messageDisplay.textContent = ''; }
+  
+  // Call the original spin logic.
   originalSpin(elem);
 };
 
 // Initial display update.
 updateCreditsDisplay();
 
-// Particle effect on win (as before)
+// Trigger win animation (example implementation)
 function triggerWinAnimation() {
   const container = document.getElementById('container');
   if (!container) return;
