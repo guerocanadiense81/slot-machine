@@ -1,95 +1,90 @@
 // public/game-logic.js
 
-// Global toggles to pause win conditions (set to true to disable that win check)
-let pause5InRow = false;   // Pause full-row (5-in-a-row) win logic if true.
-let pause3InRow = false;   // Pause three consecutive match win logic if true.
-let pause2InRow = false;   // Pause 2-in-a-row win logic for the middle row if true.
+// Global toggles for win conditions (set to true to disable that win condition)
+let pause5InRow = false;   // Disable full-row wins if true.
+let pause3InRow = false;   // Disable three consecutive matching wins if true.
+let pause2InRow = false;   // Disable two-in-a-row wins on the middle row if true.
 
 /**
- * checkWin - Checks all rows for winning conditions and updates off-chain balance.
- *   The following win conditions are checked per row:
- *   1. 5-in-a-row: If all reels for the row have the same symbol,
- *      multiplier = 10 if symbol is "big_win", otherwise 5.
- *   2. 3-in-a-row: If any three consecutive reels in the row match, multiplier = 2.
- *   3. 2-in-a-row on middle row (row index 1): If any two consecutive match, multiplier = 0.25.
- * All multipliers are summed and the total win is (bet * totalMultiplier).
+ * checkWin:
+ *   For each row (0, 1, 2), the function:
+ *    - Checks if all reels in that row match (5-in-a-row win):
+ *         * Multiplier is 10 if symbol is "big_win", else 5.
+ *    - Checks for any three consecutive matching symbols (3-in-a-row win), multiplier +2.
+ *    - For the middle row (row index 1) only, checks for any two consecutive matching symbols, multiplier +0.25.
+ *   The total multiplier is summed across rows, and the winnings = bet * totalMultiplier.
+ *   The winnings are then added to the off-chain virtual balance.
  */
 function checkWin() {
   const reels = document.querySelectorAll('.col');
   let totalMultiplier = 0;
   
-  // For debugging: log number of reels
-  console.log(`Detected ${reels.length} reels in the game.`);
+  console.log(`Checking win conditions on ${reels.length} reels.`);
   
-  // We assume each reel has at least 3 icons (rows 0, 1, and 2)
+  // Iterate rows; we assume each reel shows three rows: indices 0, 1, 2.
   for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
     let rowSymbols = [];
+    
     reels.forEach((reel, reelIndex) => {
       const icons = reel.querySelectorAll('.icon img');
       if (icons.length > rowIndex) {
-        const src = icons[rowIndex].getAttribute("src");
-        const symbol = src.split('/').pop().split('.')[0];
+        let src = icons[rowIndex].getAttribute("src");
+        let symbol = src.split('/').pop().split('.')[0];
         rowSymbols.push(symbol);
-        console.log(`Reel ${reelIndex} row ${rowIndex}: ${symbol}`);
+        console.log(`Reel ${reelIndex}, row ${rowIndex}: ${symbol}`);
       } else {
-        console.warn(`Reel ${reelIndex} does not have a row at index ${rowIndex}`);
+        console.warn(`Reel ${reelIndex} missing row ${rowIndex}`);
       }
     });
-
-    // 5-in-a-row win check: All symbols in this row match.
+    
+    // Check full row (5-in-a-row) win
     if (!pause5InRow && rowSymbols.length === reels.length && rowSymbols.every(s => s === rowSymbols[0])) {
-      let multiplier5 = rowSymbols[0] === 'big_win' ? 10 : 5;
-      console.log(`Row ${rowIndex} full match detected with symbol "${rowSymbols[0]}". Multiplier: ${multiplier5}`);
-      totalMultiplier += multiplier5;
+      let multiplier = rowSymbols[0] === 'big_win' ? 10 : 5;
+      console.log(`Row ${rowIndex} full match: symbol ${rowSymbols[0]} wins with multiplier ${multiplier}`);
+      totalMultiplier += multiplier;
     } else {
-      console.log(`Row ${rowIndex} full match not detected. Symbols: [${rowSymbols.join(', ')}]`);
+      console.log(`Row ${rowIndex} full match failed. Symbols: [${rowSymbols.join(', ')}]`);
     }
-
-    // 3-in-a-row win check: Check for any three consecutive matching symbols.
+    
+    // Check 3-in-a-row win (any three consecutive reels)
     if (!pause3InRow && rowSymbols.length >= 3) {
-      let found3 = false;
+      let win3 = false;
       for (let i = 0; i <= rowSymbols.length - 3; i++) {
         if (rowSymbols[i] && rowSymbols[i] === rowSymbols[i+1] && rowSymbols[i] === rowSymbols[i+2]) {
-          console.log(`Row ${rowIndex}: 3-in-a-row detected at reels ${i}-${i+2} (symbol: ${rowSymbols[i]}), +2 multiplier`);
+          console.log(`Row ${rowIndex} 3-in-a-row win at reels ${i}-${i+2} with symbol ${rowSymbols[i]}, +2 multiplier`);
           totalMultiplier += 2;
-          found3 = true;
-          break;
+          win3 = true;
+          break;  // Count only one instance per row.
         }
       }
-      if (!found3) console.log(`Row ${rowIndex}: No 3-in-a-row found.`);
+      if (!win3) console.log(`Row ${rowIndex} did not qualify for 3-in-a-row win.`);
     }
-
-    // 2-in-a-row win for middle row (rowIndex === 1)
+    
+    // Check 2-in-a-row win on the middle row (rowIndex === 1)
     if (!pause2InRow && rowIndex === 1 && rowSymbols.length >= 2) {
-      let found2 = false;
+      let win2 = false;
       for (let i = 0; i <= rowSymbols.length - 2; i++) {
         if (rowSymbols[i] && rowSymbols[i] === rowSymbols[i+1]) {
-          console.log(`Middle row: 2-in-a-row detected at reels ${i} and ${i+1} (symbol: ${rowSymbols[i]}), +0.25 multiplier`);
+          console.log(`Middle row 2-in-a-row win at reels ${i} and ${i+1} with symbol ${rowSymbols[i]}, +0.25 multiplier`);
           totalMultiplier += 0.25;
-          found2 = true;
+          win2 = true;
           break;
         }
       }
-      if (!found2) console.log(`Middle row: No 2-in-a-row found.`);
+      if (!win2) console.log(`Middle row did not qualify for 2-in-a-row win.`);
     }
-  } // End for each row
-
-  console.log(`Total multiplier for win conditions: ${totalMultiplier}`);
+  }
   
-  // If any win conditions met, calculate winnings.
+  console.log(`Total multiplier calculated: ${totalMultiplier}`);
+  
+  // If win conditions met, calculate winnings.
   if (totalMultiplier > 0) {
     const betInput = document.getElementById("bet-input");
-    let betAmount = 50; // default bet
-    if (betInput) {
-      const val = parseFloat(betInput.value);
-      if (!isNaN(val)) {
-        betAmount = val;
-      }
-    }
+    const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
     const winnings = betAmount * totalMultiplier;
-    console.log(`Calculated winnings: ${winnings} MET (bet: ${betAmount} MET * multiplier: ${totalMultiplier})`);
+    console.log(`Winnings: ${winnings} MET (bet ${betAmount} MET, multiplier ${totalMultiplier})`);
     
-    // Update off-chain balance with winnings
+    // Add the winnings to off-chain balance
     if (typeof window.updateInGameBalance === "function") {
       window.updateInGameBalance(winnings);
     }
@@ -100,52 +95,62 @@ function checkWin() {
   }
 }
 
-// --- Placeholder Functions for UI Feedback ---
-function showMessage(message, isWin) {
-  const display = document.getElementById("message-display");
-  if (display) {
-    display.textContent = message;
-    display.style.color = isWin ? 'green' : 'red';
-    display.style.opacity = 1;
-    setTimeout(() => {
-      display.style.opacity = 0;
-    }, 3000);
+/* ---- Placeholder Functions ---- */
+function showMessage(msg, isWin) {
+  const msgElem = document.getElementById("message-display");
+  if (msgElem) {
+    msgElem.textContent = msg;
+    msgElem.style.color = isWin ? "green" : "red";
+    msgElem.style.opacity = 1;
+    setTimeout(() => { msgElem.style.opacity = 0; }, 3000);
   }
 }
 
 function triggerWinAnimation() {
   const container = document.getElementById("container");
   if (!container) return;
-  const particleContainer = document.createElement("div");
-  particleContainer.classList.add("particle-container");
-  container.appendChild(particleContainer);
+  const animElem = document.createElement("div");
+  animElem.classList.add("particle-container");
+  container.appendChild(animElem);
   for (let i = 0; i < 30; i++) {
-    const particle = document.createElement("div");
-    particle.classList.add("particle");
-    particleContainer.appendChild(particle);
-    particle.style.left = Math.random() * 100 + "%";
-    particle.style.animationDelay = Math.random() * 0.5 + "s";
+    const p = document.createElement("div");
+    p.classList.add("particle");
+    animElem.appendChild(p);
+    p.style.left = Math.random() * 100 + "%";
+    p.style.animationDelay = Math.random() * 0.5 + "s";
   }
   setTimeout(() => {
-    container.removeChild(particleContainer);
+    container.removeChild(animElem);
   }, 2000);
 }
 
-// --- Wrap the Original spin() Function ---
+/* ---- Spin Wrapper: Deduct Bet Using Total Available Funds ---- */
 const originalSpin = window.spin;
 window.spin = function(elem) {
-  // Deduct bet amount before spinning.
+  // Determine total available tokens:
+  // Total = locked deposit + offchain net balance.
+  let totalAvailable = window.initialDeposit + window.offchainBalance;
   const betInput = document.getElementById("bet-input");
   const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
   
-  // Ensure player has enough balance.
-  if (window.offchainBalance <= 0) {
+  console.log(`Total available tokens: ${totalAvailable} MET (Deposit: ${window.initialDeposit}, Balance: ${window.offchainBalance})`);
+  
+  if (totalAvailable < betAmount) {
     showMessage("Not enough tokens", false);
     return;
   }
-  console.log(`Deducting bet of ${betAmount} MET from off-chain balance.`);
-  window.updateInGameBalance(-betAmount);
   
-  // Proceed with original spin logic.
+  // If offchainBalance is insufficient but total is enough, "transfer" the shortfall from the deposit.
+  if (window.offchainBalance < betAmount) {
+    let shortfall = betAmount - window.offchainBalance;
+    console.log(`Shortfall detected: ${shortfall} MET. Adjusting deposit to cover bet.`);
+    // Deduct shortfall from initialDeposit and add it to offchainBalance.
+    window.initialDeposit = Math.max(window.initialDeposit - shortfall, 0);
+    window.offchainBalance += shortfall;
+    console.log(`New values - Deposit: ${window.initialDeposit}, Balance: ${window.offchainBalance}`);
+  }
+  
+  // Deduct the bet amount from offchain balance.
+  window.updateInGameBalance(-betAmount);
   originalSpin(elem);
 };
