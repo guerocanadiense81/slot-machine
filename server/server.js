@@ -15,26 +15,27 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Since server.js is inside "server", use "../" to reach project root folders.
+// Serve static files (server.js is inside "server", so use "../" to refer to parent folders)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Home route to serve index.html
+// Serve home page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
-/* ---------------------------------------------------------
+/* -------------------------------------------------
    Off-chain Virtual Credit Endpoints
-   --------------------------------------------------------- */
+   ------------------------------------------------- */
 
-// In-memory store for user in‑game balances (keyed by wallet address)
-// and aggregated house funds (losses).
+// In-memory store for player balances (keyed by wallet address)
 const userBalances = {};
+
+// Global variable to aggregate losses (house funds)
 let houseFunds = 0;
 
-// GET a user's off-chain balance
+// GET player's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
@@ -42,10 +43,10 @@ app.get('/api/user/:walletAddress', (req, res) => {
 });
 
 /*
-  POST endpoint to update a user's balance by a relative change.
-  Expects JSON: { "balanceChange": <number> }
-  If the balanceChange is negative, that loss is added to houseFunds.
-  The balance cannot go below 0.
+  POST endpoint to update a player's off-chain balance using a relative change.
+  Expects { "balanceChange": <number> }.
+  If the change is negative, that absolute amount adds to houseFunds.
+  Balance is not allowed to go negative.
 */
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -57,67 +58,58 @@ app.post('/api/user/:walletAddress', (req, res) => {
   let change = parseFloat(balanceChange);
   let newBalance = currentBalance + change;
   if (newBalance < 0) {
-    change = -currentBalance; // Only deduct the available funds
+    change = -currentBalance; // deduct only what is available
     newBalance = 0;
   }
   userBalances[wallet] = newBalance.toString();
   if (change < 0) {
-    // Aggregate losses into houseFunds.
     houseFunds += Math.abs(change);
   }
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
 /*
-  GET endpoint for admin to view the aggregated house funds (losses)
-  Protected by JWT (admin token)
+  POST /api/player/reconcile 
+  Reconciles a player’s session when they finish playing.
+  Expects JSON: { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
+  
+  The netChange = finalBalance - initialDeposit.
+  If netChange is negative, the player has a loss.
+  If netChange is positive, the player has a win.
+  (In production, trigger on-chain transfers accordingly.)
 */
-app.get('/api/admin/house-funds', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized, token required." });
+app.post('/api/player/reconcile', (req, res) => {
+  const { wallet, initialDeposit, finalBalance } = req.body;
+  if (!wallet || initialDeposit === undefined || finalBalance === undefined) {
+    return res.status(400).json({ error: "wallet, initialDeposit, and finalBalance are required" });
   }
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, SECRET_KEY);
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token." });
-  }
-  res.json({ houseFunds: houseFunds.toString() });
+  const normalizedWallet = wallet.toLowerCase();
+  const netChange = parseFloat(finalBalance) - parseFloat(initialDeposit);
+  
+  // Here you would call smart contract functions to adjust on-chain balances.
+  // For this demo, we simply return the netChange.
+  
+  res.json({
+    wallet: normalizedWallet,
+    initialDeposit,
+    finalBalance,
+    netChange,
+    message: netChange < 0
+      ? `Player lost ${Math.abs(netChange)} MET. Loss would be taken from player's on-chain balance.`
+      : netChange > 0
+        ? `Player won ${netChange} MET. Winnings would be transferred on-chain to the player.`
+        : "No net change."
+  });
 });
 
-/*
-  POST endpoint for admin to cash out the house funds.
-  This resets the aggregated house funds to 0.
-  (In production, this would trigger an on-chain MET token transfer from your house wallet.)
-*/
-app.post('/api/admin/cashout-house', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized, token required." });
-  }
-  const token = authHeader.split(" ")[1];
-  try {
-    jwt.verify(token, SECRET_KEY);
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token." });
-  }
-  if (houseFunds <= 0) {
-    return res.status(400).json({ error: "No funds to cash out." });
-  }
-  const cashedOut = houseFunds;
-  houseFunds = 0;
-  // In production, you would add logic here to trigger an on-chain transfer.
-  res.json({ cashedOut: cashedOut.toString() });
-});
-
-/* ---------------------------------------------------------
-   Other Existing Endpoints (Win Percentage, Transactions, Admin Login, etc.)
-   --------------------------------------------------------- */
+/* -------------------------------------------------
+   Other Endpoints (win percentage, transactions, admin login, etc.)
+   ------------------------------------------------- */
 
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
 
+// Example endpoints for winPercentage and transaction logs...
 app.get('/api/get-win-percentage', (req, res) => {
   res.json({ percentage: winPercentage });
 });
@@ -132,7 +124,6 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Example admin login endpoint (returns JWT token)
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -143,7 +134,7 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// (Additional endpoints such as for transactions, contact, etc., can be added below.)
+// Optionally add other endpoints...
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
