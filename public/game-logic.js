@@ -1,44 +1,31 @@
 // public/game-logic.js
 
-// Detect if this is the paid version by checking the URL. For paid version, use the off-chain balance.
-let isPaidVersion = window.location.pathname.includes("paid-game.html");
+// For the free version, you might use a default starting value.
+// For the paid version, we always use the backend off-chain balance.
+const isPaidVersion = window.location.pathname.includes("paid-game.html");
 
-// For the free version, we use a fixed default; for the paid version, the balance will be loaded via wallet.js.
-let credits = isPaidVersion ? (window.offchainBalance || 0) : 1000;
-let bet = 50;  // Default bet amount
+// In the paid version, we do not use a separate "credits" variable;
+// we rely on the backend to store and update the virtual balance.
+// (For the free version, if desired, you could still have a static value.)
 
-// We'll update the UI using the element with id "credits-display"
-const creditsDisplayElement = document.getElementById('credits-display');
-const betInput = document.getElementById('bet-input');
-const messageDisplay = document.getElementById('message-display');
+// Assume that when gameplay starts (in the paid version), the balance is loaded via wallet.js
+// and displayed in the element with id "credits-display".
 
-// Function to update the displayed virtual credits.
-function updateCreditsDisplay() {
-  if (creditsDisplayElement) {
-    creditsDisplayElement.innerText = credits;
-  }
-}
-
-// Initially, update the display
-updateCreditsDisplay();
-
-// Wrap the original setResult function (assuming your reel animation engine provides it)
+// Wrap the original setResult function provided by your reel animation engine:
 const originalSetResult = window.setResult;
 window.setResult = function() {
   originalSetResult();
-  // Wait a bit for the animations to settle, then check win conditions.
+  // After animations, check win conditions
   setTimeout(checkWin, 200);
 };
 
-// Function to determine if the spin was a win and update credits accordingly.
-function checkWin() {
+async function checkWin() {
   const cols = document.querySelectorAll('.col');
   let results = [];
   cols.forEach(col => {
     const icons = col.querySelectorAll('.icon img');
-    // Assume the middle visible icon is at index 1
+    // Assume the visible middle icon is at index 1
     const src = icons[1].getAttribute('src');
-    // Extract the icon name from something like "items/apple.png"
     const parts = src.split('/');
     const fileName = parts[parts.length - 1];
     const iconName = fileName.split('.')[0];
@@ -46,12 +33,11 @@ function checkWin() {
   });
 
   let multiplier = 0;
-
-  // Check for a 5-in-a-row win.
+  // 5-in-a-row win condition.
   if (results.every(icon => icon === results[0])) {
     multiplier = (results[0] === 'big_win') ? 10 : 5;
   } else {
-    // Check for any 3 consecutive matching icons.
+    // 3 consecutive matching icons win condition.
     for (let i = 0; i <= results.length - 3; i++) {
       if (results[i] === results[i+1] && results[i] === results[i+2]) {
         multiplier = 2;
@@ -60,24 +46,20 @@ function checkWin() {
     }
   }
 
+  // Determine balance change based on win/loss
   if (multiplier > 0) {
-    let winnings = bet * multiplier;
-    credits += winnings;
-    showMessage(`You win! +${winnings} credits`, true);
+    const winnings = parseFloat(document.getElementById("bet-input").value) * multiplier;
+    // Notify the user and update the backend balance with a positive change.
+    showMessage(`You win! +${winnings} MET`, true);
+    await window.updateInGameBalance(winnings);
     triggerWinAnimation();
   } else {
     showMessage('You lose!', false);
   }
-
-  // Update the UI and inform the backend for paid version.
-  updateCreditsDisplay();
-  if (isPaidVersion && window.updateInGameBalance) {
-    window.updateInGameBalance(credits.toString());
-  }
 }
 
-// Display win/loss messages.
 function showMessage(msg, isWin) {
+  const messageDisplay = document.getElementById("message-display");
   if (!messageDisplay) return;
   messageDisplay.textContent = msg;
   messageDisplay.style.color = isWin ? 'green' : 'red';
@@ -87,66 +69,29 @@ function showMessage(msg, isWin) {
   }, 3000);
 }
 
-// Listen for changes in bet input.
+// Listen to bet input changes.
+const betInput = document.getElementById("bet-input");
+let bet = 50; // Default bet amount.
 if (betInput) {
   betInput.addEventListener('change', (e) => {
     const val = parseInt(e.target.value, 10);
-    if (!isNaN(val) && val > 0) {
-      bet = val;
-    } else {
-      bet = 50;
-      betInput.value = bet;
-    }
+    bet = (!isNaN(val) && val > 0) ? val : 50;
   });
 }
 
-// Wrap the original spin function to deduct the bet from the off-chain credits.
+// Wrap the spin function to deduct the bet from the off-chain balance.
 const originalSpin = window.spin;
-window.spin = function(elem) {
-  // For the paid version, ensure the wallet is connected.
+window.spin = async function(elem) {
+  // For the paid version, ensure wallet is connected.
   if (isPaidVersion && !window.userWallet) {
     showMessage("Please connect your wallet first.", false);
     return;
   }
   
-  // Check if the current balance is enough for the bet.
-  if (credits < bet) {
-    showMessage("Not enough credits!", false);
-    return;
-  }
+  // Before spinning, deduct the bet amount from the off-chain balance.
+  // Call updateInGameBalance with a negative value.
+  await window.updateInGameBalance(-bet);
   
-  // Deduct the bet.
-  credits -= bet;
-  updateCreditsDisplay();
-  if (isPaidVersion && window.updateInGameBalance) {
-    window.updateInGameBalance(credits.toString());
-  }
-  
-  // Clear previous messages.
-  if (messageDisplay) { messageDisplay.textContent = ''; }
-  
-  // Call the original spin logic.
+  // Call the original spin function (which triggers the outcome and calls setResult).
   originalSpin(elem);
 };
-
-// Initial display update.
-updateCreditsDisplay();
-
-// Trigger win animation (example implementation)
-function triggerWinAnimation() {
-  const container = document.getElementById('container');
-  if (!container) return;
-  const particleContainer = document.createElement('div');
-  particleContainer.classList.add('particle-container');
-  container.appendChild(particleContainer);
-  for (let i = 0; i < 30; i++) {
-    const particle = document.createElement('div');
-    particle.classList.add('particle');
-    particleContainer.appendChild(particle);
-    particle.style.left = Math.random() * 100 + '%';
-    particle.style.animationDelay = Math.random() * 0.5 + 's';
-  }
-  setTimeout(() => {
-    container.removeChild(particleContainer);
-  }, 2000);
-}
