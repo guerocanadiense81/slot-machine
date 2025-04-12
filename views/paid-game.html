@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slot Machine - Paid Version</title>
   <link rel="stylesheet" href="/paid.css">
-  <!-- Include ethers.js UMD build -->
+  <!-- Include the UMD build of ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
@@ -55,8 +55,10 @@
   <div id="container">
     <div class="window-border">
       <div class="window">
-        <!-- Populate each reel with three icons -->
+        <!-- Begin Reels: Using 15 reels (each ".outer-col" contains one reel) -->
+        <!-- Spacer -->
         <div class="outer-spacer"></div>
+        <!-- Reel 1 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
@@ -65,6 +67,25 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
+        <!-- Reel 2 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 3 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 4 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
@@ -73,6 +94,7 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
+        <!-- Reel 5 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
@@ -81,6 +103,7 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
+        <!-- Reel 6 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
@@ -89,6 +112,88 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
+        <!-- Reel 7 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 8 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 9 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 10 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 11 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 12 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 13 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 14 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- Reel 15 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        <!-- End Reels -->
       </div>
     </div>
     <input type="button" onclick="spin(this)" class="start-button" value="Spin"/>
