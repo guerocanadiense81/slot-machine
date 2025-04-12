@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const creditsDisplay = document.getElementById("credits-display");
       if (creditsDisplay) creditsDisplay.innerText = data.balance;
       window.offchainBalance = parseFloat(data.balance) || 0;
-      window.initialDeposit = window.offchainBalance; // Record session's initial deposit
+      window.initialDeposit = window.offchainBalance;
       
       // Fetch on-chain MET balance for display.
       await getOnChainMETBalance();
