@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slot Machine - Paid Version</title>
   <link rel="stylesheet" href="/paid.css">
-  <!-- Include ethers.js UMD build -->
+  <!-- Include the UMD build of ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
@@ -55,16 +55,40 @@
   <div id="container">
     <div class="window-border">
       <div class="window">
+        <!-- Each reel (.col) is pre-populated with 3 icons -->
         <div class="outer-spacer"></div>
-        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+          </div>
+        </div>
         <div class="outer-spacer"></div>
-        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+          </div>
+        </div>
         <div class="outer-spacer"></div>
-        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-col">
+          <div class="col">
+            <!-- For testing, you might change these values to force wins -->
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
         <div class="outer-spacer"></div>
-        <div class="outer-col"><div class="col"></div></div>
-        <div class="outer-spacer"></div>
-        <div class="outer-col"><div class="col"></div></div>
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
         <div class="outer-spacer"></div>
       </div>
     </div>
