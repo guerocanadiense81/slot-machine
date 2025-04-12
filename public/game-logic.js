@@ -1,25 +1,28 @@
 // public/game-logic.js
 
-// Global toggles: set to true to disable a given win condition (for testing)
-let pause5InRow = false;  // 5-in-a-row win (all reels in one row match)
-let pause3InRow = false;  // 3-in-a-row win (any three consecutive matching icons)
-let pause2InRow = false;  // 2-in-a-row win on middle row (row index 1)
+// Global toggles to pause specific win conditions (set to true to disable a given condition)
+let pause5InRow = false;   // 5-in-a-row win (all reels in a row match)
+let pause3InRow = false;   // 3-in-a-row win (any three consecutive matching icons)
+let pause2InRow = false;   // 2-in-a-row win on the middle row (row index 1)
 
+// The following function checks win conditions across each row of reels.
+// It expects that each reel (.col) has at least 3 child elements with class "icon"
+// which contain an <img> with a src like "items/cherry.png".
 function checkWin() {
   const reels = document.querySelectorAll('.col');
   let totalMultiplier = 0;
   console.log(`checkWin: Found ${reels.length} reels.`);
-  
-  // For each expected row index (0, 1, 2)
+
+  // Process each of the three rows (rows 0, 1, 2)
   for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
     let rowSymbols = [];
     
     reels.forEach((reel, reelIndex) => {
-      // First try to get icons via the expected structure
+      // Try to find image elements within .icon tags.
       let icons = reel.querySelectorAll('.icon img');
       if (!icons || icons.length <= rowIndex) {
-        console.warn(`Reel ${reelIndex} does not have enough ".icon img" children for row ${rowIndex}.`);
-        // Fallback: get all img elements inside reel
+        console.warn(`Reel ${reelIndex} does not have enough ".icon img" elements for row ${rowIndex}.`);
+        // Fallback: try to find any img in the reel.
         icons = reel.querySelectorAll("img");
       }
       
@@ -35,7 +38,9 @@ function checkWin() {
             console.warn(`Reel ${reelIndex}, row ${rowIndex}: Image src is missing.`);
             rowSymbols.push("undefined");
           } else {
-            const symbol = src.split('/').pop().split('.')[0];
+            const parts = src.split('/');
+            const file = parts[parts.length - 1];
+            const symbol = file.split('.')[0];
             rowSymbols.push(symbol);
           }
         }
@@ -47,16 +52,16 @@ function checkWin() {
     
     console.log(`Row ${rowIndex} symbols: [${rowSymbols.join(", ")}]`);
     
-    // --- 5-in-a-row win: All reels in this row match.
-    if (!pause5InRow && rowSymbols.length === reels.length && rowSymbols.every(s => s === rowSymbols[0] && s !== "undefined" && s !== "missing")) {
+    // 5-in-a-row win: All reels in the row match (if they aren't "undefined" or "missing")
+    if (!pause5InRow && rowSymbols.length === reels.length && rowSymbols.every(s => s !== "undefined" && s !== "missing" && s === rowSymbols[0])) {
       const multiplier5 = rowSymbols[0] === 'big_win' ? 10 : 5;
-      console.log(`Row ${rowIndex}: 5-in-a-row win detected with symbol "${rowSymbols[0]}" giving multiplier ${multiplier5}.`);
+      console.log(`Row ${rowIndex}: 5-in-a-row win detected with "${rowSymbols[0]}" (multiplier ${multiplier5}).`);
       totalMultiplier += multiplier5;
     } else {
       console.log(`Row ${rowIndex}: 5-in-a-row win not detected.`);
     }
     
-    // --- 3-in-a-row win: Check for any three consecutive matching symbols.
+    // 3-in-a-row win: If any three consecutive icons in this row match.
     if (!pause3InRow && rowSymbols.length >= 3) {
       let threeFound = false;
       for (let i = 0; i <= rowSymbols.length - 3; i++) {
@@ -65,7 +70,7 @@ function checkWin() {
           console.log(`Row ${rowIndex}: 3-in-a-row win detected at reels ${i}-${i+2} with symbol "${rowSymbols[i]}", +2 multiplier.`);
           totalMultiplier += 2;
           threeFound = true;
-          break; // Count only one instance per row.
+          break; // Count one 3-in-a-row occurrence per row.
         }
       }
       if (!threeFound) {
@@ -73,32 +78,34 @@ function checkWin() {
       }
     }
     
-    // --- 2-in-a-row win on the middle row (rowIndex === 1): Count every distinct consecutive pair.
+    // 2-in-a-row win on middle row (row index 1): Count every distinct consecutive pair.
     if (!pause2InRow && rowIndex === 1 && rowSymbols.length >= 2) {
       let pairCount = 0;
       for (let i = 0; i < rowSymbols.length - 1; i++) {
         if (rowSymbols[i] && rowSymbols[i] !== "undefined" && rowSymbols[i] !== "missing" &&
             rowSymbols[i] === rowSymbols[i+1]) {
-          console.log(`Row 1: 2-in-a-row win detected at reels ${i} & ${i+1} with symbol "${rowSymbols[i]}", +0.25 multiplier.`);
+          console.log(`Row 1: 2-in-a-row win detected at reels ${i} and ${i+1} with symbol "${rowSymbols[i]}", +0.25 multiplier.`);
           totalMultiplier += 0.25;
           pairCount++;
+          // Do not break; allow multiple pairs per row.
         }
       }
       if (pairCount === 0) {
         console.log("Row 1: No 2-in-a-row win detected.");
       } else {
-        console.log(`Row 1: Total of ${pairCount} pair(s) detected (yielding +${(pairCount * 0.25)} multiplier).`);
+        console.log(`Row 1: Total of ${pairCount} pair(s) detected.`);
       }
     }
   } // end for each row
 
-  console.log(`Total multiplier from win conditions: ${totalMultiplier}`);
+  console.log(`Total multiplier: ${totalMultiplier}`);
   
   if (totalMultiplier > 0) {
     const betInput = document.getElementById("bet-input");
     const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
     const winnings = betAmount * totalMultiplier;
-    console.log(`Winnings computed: ${winnings} MET (Bet: ${betAmount}, Total Multiplier: ${totalMultiplier})`);
+    console.log(`Calculated winnings: ${winnings} MET (Bet: ${betAmount} x Multiplier: ${totalMultiplier})`);
+    
     if (typeof window.updateInGameBalance === "function") {
       window.updateInGameBalance(winnings);
     }
@@ -123,32 +130,41 @@ function showMessage(message, isWin) {
 function triggerWinAnimation() {
   const container = document.getElementById("container");
   if (!container) return;
-  const particleContainer = document.createElement("div");
-  particleContainer.classList.add("particle-container");
-  container.appendChild(particleContainer);
+  const animDiv = document.createElement("div");
+  animDiv.classList.add("particle-container");
+  container.appendChild(animDiv);
   for (let i = 0; i < 30; i++) {
     const particle = document.createElement("div");
     particle.classList.add("particle");
-    particleContainer.appendChild(particle);
+    animDiv.appendChild(particle);
     particle.style.left = Math.random() * 100 + "%";
     particle.style.animationDelay = Math.random() * 0.5 + "s";
   }
-  setTimeout(() => { container.removeChild(particleContainer); }, 2000);
+  setTimeout(() => {
+    container.removeChild(animDiv);
+  }, 2000);
 }
 
 /* ----- Wrap the Original spin() Function -----
-   Before initiating a spin, it deducts the bet from the offchain play balance.
-   It expects the off-chain play balance (window.offchainBalance) to be updated by your wallet.js.
+   Before a spin, check that the total available (locked deposit + net play balance) 
+   is at least the bet amount. If not, show an error message. Then, deduct the bet
+   from the net play balance and call the original spin.
 */
 const originalSpin = window.spin;
 window.spin = function(elem) {
   const betInput = document.getElementById("bet-input");
   const betAmount = betInput && !isNaN(parseFloat(betInput.value)) ? parseFloat(betInput.value) : 50;
-  if (window.offchainBalance < betAmount) {
+  
+  // Total available = locked deposit (initialDeposit) + net play balance (offchainBalance)
+  const totalAvailable = (window.initialDeposit || 0) + (window.offchainBalance || 0);
+  console.log(`Before spin: Total available = ${totalAvailable} MET (Deposit: ${window.initialDeposit}, Play Balance: ${window.offchainBalance}), Bet: ${betAmount} MET`);
+  
+  if (totalAvailable < betAmount) {
     showMessage("Not enough tokens", false);
     return;
   }
-  console.log(`Deducting bet of ${betAmount} MET from play balance.`);
+  
+  // Deduct the full bet amount from the net play balance.
   window.updateInGameBalance(-betAmount);
   originalSpin(elem);
 };
