@@ -3,18 +3,15 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
 
-  // Global variables to store the player's off-chain balance and session initial deposit.
   window.offchainBalance = 0;
   window.initialDeposit = 0;
 
   async function connectWalletAndLoadBalances() {
     console.log("Connect Wallet button clicked.");
-    
     if (!window.ethereum) {
       alert("MetaMask not detected. Please install MetaMask.");
       return;
     }
-    
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (!accounts || accounts.length === 0) return;
@@ -23,17 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
       window.userWallet = walletAddress;
       alert("Wallet connected: " + walletAddress);
       
-      // Fetch off-chain balance from backend
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       const data = await response.json();
       console.log("Fetched off-chain balance:", data.balance);
       const creditsDisplay = document.getElementById("credits-display");
       if (creditsDisplay) creditsDisplay.innerText = data.balance;
       window.offchainBalance = parseFloat(data.balance) || 0;
-      // Record the initial deposit for this session.
       window.initialDeposit = window.offchainBalance;
       
-      // Fetch on-chain MET balance for display.
       await getOnChainMETBalance();
     } catch (error) {
       console.error("Error connecting wallet:", error);
@@ -60,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Attach wallet connection handler.
   const connectWalletBtn = document.getElementById("connectWallet");
   if (connectWalletBtn) {
     connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
@@ -69,7 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Connect Wallet button not found in DOM.");
   }
 
-  // Global function: update the player's off-chain balance by a relative change.
   window.updateInGameBalance = async function(balanceChange) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -92,7 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Manual deposit: adds deposit amount to off-chain balance.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     let depositAmount = parseFloat(depositInput.value);
@@ -105,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
   };
 
-  // Reconciliation: finishes the session and triggers on-chain settlement.
   window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -130,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Optionally, use navigator.sendBeacon on beforeunload for automatic reconciliation.
+  // Optionally trigger reconciliation on page unload via sendBeacon.
   window.addEventListener("beforeunload", () => {
     if (window.userWallet) {
       const payload = JSON.stringify({
