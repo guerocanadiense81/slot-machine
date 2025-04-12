@@ -15,13 +15,15 @@
     <a href="/contact.html">Contact</a> |
     <a href="/instructions.html">Instructions</a>
   </nav>
-  
+
   <!-- Slot Machine Container -->
   <div id="container">
     <div class="window-border">
       <div class="window">
-        <!-- Reels: Each ".col" element here is populated with three icons -->
+        <!-- Add outer-spacer if needed -->
         <div class="outer-spacer"></div>
+        
+        <!-- Reel 1 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
@@ -30,6 +32,38 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
+        
+        <!-- Reel 2 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        
+        <!-- Reel 3 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        
+        <!-- Reel 4 -->
+        <div class="outer-col">
+          <div class="col">
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+          </div>
+        </div>
+        <div class="outer-spacer"></div>
+        
+        <!-- Reel 5 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
@@ -38,25 +72,11 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-      </div>
-    </div>
+      </div> <!-- .window -->
+    </div> <!-- .window-border -->
+    
+    <!-- Spin Button -->
     <input type="button" onclick="spin(this)" class="start-button" value="Spin">
-  </div>
+  </div> <!-- #container -->
 </body>
 </html>
