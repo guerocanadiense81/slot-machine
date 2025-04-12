@@ -3,7 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
 
-  // Global variable to store off-chain balance (as a number)
+  // Global variable to store off-chain balance as a number.
   window.offchainBalance = 0;
 
   async function connectWalletAndLoadBalances() {
@@ -37,10 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (creditsDisplay) {
         creditsDisplay.innerText = data.balance;
       }
-      
       window.offchainBalance = parseFloat(data.balance) || 0;
       
-      // Get on-chain balance as well
+      // Fetch on-chain MET balance
       await getOnChainMETBalance();
     } catch (error) {
       console.error("Error connecting wallet:", error);
@@ -48,16 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Connect wallet button event handler
-  const connectWalletBtn = document.getElementById("connectWallet");
-  if (connectWalletBtn) {
-    connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
-    console.log("connectWallet event listener attached.");
-  } else {
-    console.error("Connect Wallet button not found in DOM.");
-  }
-
-  // Function to fetch on-chain MET balance using ethers.js.
   async function getOnChainMETBalance() {
     if (!window.ethereum) {
       console.error("MetaMask not detected, cannot fetch on-chain balance.");
@@ -86,8 +75,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Global function to update the off-chain balance using a relative change.
-  // The backend endpoint expects: { "balanceChange": <number> }
+  // Attach the wallet connect event handler
+  const connectWalletBtn = document.getElementById("connectWallet");
+  if (connectWalletBtn) {
+    connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
+    console.log("connectWallet event listener attached.");
+  } else {
+    console.error("Connect Wallet button not found in DOM.");
+  }
+
+  // Global function: update off-chain balance (expects a relative change; positive or negative number).
   window.updateInGameBalance = async function(balanceChange) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -101,16 +98,56 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       console.log("Off-chain balance updated on backend:", result);
-      
       const creditsDisplay = document.getElementById("credits-display");
       if (creditsDisplay) {
         creditsDisplay.innerText = result.newBalance;
       }
-      // Update global variable to new balance.
       window.offchainBalance = parseFloat(result.newBalance);
       return result.newBalance;
     } catch (error) {
       console.error("Error updating off-chain balance:", error);
+    }
+  };
+
+  // Global function: manual deposit.
+  window.manualDeposit = async function() {
+    const depositInput = document.getElementById("depositInput");
+    if (!depositInput) {
+      alert("Deposit input field not found.");
+      return;
+    }
+    let depositAmount = parseFloat(depositInput.value);
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+      alert("Please enter a valid deposit amount.");
+      return;
+    }
+    console.log("Depositing MET. Current:", window.offchainBalance, "Deposit:", depositAmount);
+    // Update backend by adding depositAmount.
+    await window.updateInGameBalance(depositAmount);
+    alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
+  };
+
+  // Global function: cash out.
+  window.cashOut = async function() {
+    if (!window.userWallet) {
+      alert("Wallet not connected.");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/cashout/${window.userWallet.toLowerCase()}`, {
+        method: "POST"
+      });
+      if (!response.ok) {
+        throw new Error("Cash out failed.");
+      }
+      const data = await response.json();
+      alert("Cash out of " + data.cashedOut + " MET processed. Your off-chain balance is now 0.");
+      // Update UI to reflect balance of 0.
+      document.getElementById("credits-display").innerText = "0";
+      window.offchainBalance = 0;
+    } catch (error) {
+      console.error("Error during cash out:", error);
+      alert("Error during cash out. Check console for details.");
     }
   };
 });
