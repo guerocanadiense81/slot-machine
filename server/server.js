@@ -15,51 +15,67 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from the views, public, and items folders.
-// Since server.js is in the "server" folder, use "../" to go up one level.
+// Since server.js is in the /server folder, use "../" to refer to files at the project root.
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Explicit route for the home page
+// Explicit route to serve index.html as the homepage.
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
-/* -----------------------------
+/* --------------------------------------------------
    Off-chain Virtual Credit Endpoints
-   ----------------------------- */
+   -------------------------------------------------- */
 
-// In-memory store for user in‑game MET balances.
-// Use a persistent database in production.
+// Using an in-memory object for demonstration (replace with a real database in production)
 const userBalances = {};
 
-// GET a user's balance by their wallet address (case-insensitive).
+// GET a user's balance by wallet address (case-insensitive)
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
   res.json({ wallet, balance });
 });
 
-// POST endpoint to update a user's balance by adding a relative change.
-// Expects a JSON body: { "balanceChange": <number> }
+/* 
+  POST endpoint to update a user's balance relative to their current balance.
+  Expects a JSON body: { "balanceChange": <number> }
+  A positive value adds tokens; a negative value subtracts tokens.
+*/
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { balanceChange } = req.body;
   if (balanceChange === undefined) {
     return res.status(400).json({ error: "balanceChange is required" });
   }
-  // Get current balance (default to 0 if not set)
-  let currentBalance = parseFloat(userBalances[wallet] || "0");
+  const currentBalance = parseFloat(userBalances[wallet] || "0");
   let newBalance = currentBalance + parseFloat(balanceChange);
-  // Save new balance as string (you could convert to a fixed decimal format if desired)
   userBalances[wallet] = newBalance.toString();
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
-/* -----------------------------
-   Other Existing Endpoints
-   ----------------------------- */
+/* 
+  Cash Out Endpoint:
+  When a player wishes to cash out, this endpoint is called.
+  For demo, it simply resets their off-chain balance to 0 and returns the cashed-out amount.
+  In production, here you would trigger an on-chain transaction transferring MET tokens to the player's wallet.
+*/
+app.post('/api/cashout/:walletAddress', (req, res) => {
+  const wallet = req.params.walletAddress.toLowerCase();
+  let currentBalance = parseFloat(userBalances[wallet] || "0");
+  if (currentBalance <= 0) {
+    return res.status(400).json({ error: "No balance to cash out." });
+  }
+  // In production, trigger the on-chain cash-out process here.
+  userBalances[wallet] = "0";
+  res.json({ wallet, cashedOut: currentBalance });
+});
+
+/* --------------------------------------------------
+   (Other endpoints like winPercentage, transactions, admin login, contact, etc.)
+   -------------------------------------------------- */
 
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 let transactions = [];
@@ -78,27 +94,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-app.post('/api/record-transaction', (req, res) => {
-  const { address, amount, status } = req.body;
-  transactions.push({ address, amount, status, date: new Date() });
-  res.json({ success: true });
-});
-
-app.get('/api/transactions', (req, res) => {
-  res.json({ transactions });
-});
-
-app.get('/api/download-transactions', (req, res) => {
-  let csvContent = "Address,Amount MET,Status,Date\n";
-  transactions.forEach(tx => {
-    csvContent += `${tx.address},${tx.amount},${tx.status},${tx.date}\n`;
-  });
-  const filePath = path.join(__dirname, '../transactions.csv');
-  fs.writeFileSync(filePath, csvContent);
-  res.download(filePath, 'transactions.csv', () => fs.unlinkSync(filePath));
-});
-
-// (Other endpoints such as admin login and contact can follow here.)
+// (Other endpoints for transactions, admin login, etc., go here)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
