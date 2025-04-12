@@ -5,9 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slot Machine - Paid Version</title>
   <link rel="stylesheet" href="/paid.css">
-  <!-- Include the UMD build of ethers.js (v5.7.2 is used here) -->
+  <!-- Include the UMD build of ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Include other required scripts -->
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
   <script src="/wallet.js" defer></script>
@@ -31,8 +30,16 @@
     <button id="connectWallet">Connect Wallet</button>
   </div>
   
+  <!-- Deposit Section -->
+  <div id="depositSection">
+    <h3>Manual Deposit</h3>
+    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET">
+    <button onclick="manualDeposit()">Deposit MET</button>
+  </div>
+  
   <!-- Game UI Panel -->
   <div id="game-ui">
+    <div>Virtual Credits: <span id="credits-display">0</span> MET</div>
     <div>
       Bet: <input type="number" id="bet-input" value="50" min="1">
     </div>
