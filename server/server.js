@@ -1,4 +1,5 @@
 // server/server.js
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -7,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-// Require ethers for on-chain interactions
+// For on-chain interactions
 const { ethers } = require("ethers");
 
 const app = express();
@@ -17,41 +18,44 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from sibling directories (since server.js is in /server)
+// Serve static files from views, public, and items (using "../" because server.js is in /server)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
 
-// Home route
+// Home route serving index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
-/* --------------------------------------------------
-   On-chain Settlement Setup
-   -------------------------------------------------- */
-// Set up an ethers provider and a signer for the house wallet using environment variables.
+/* =====================================================
+   On-chain Settlement Setup via ethers.js
+   ===================================================== */
+
+// Create a provider and a signer (house wallet) using the BSC_RPC_URL and PRIVATE_KEY.
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Minimal ABI including winBet and loseBet functions.
+// Minimal ABI: we assume your MET token contract provides winBet and loseBet methods.
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
 ];
-const metContract = new ethers.Contract(process.env.MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
+const MET_CONTRACT_ADDRESS = process.env.MET_CONTRACT_ADDRESS;
+const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
 
-/* --------------------------------------------------
+/* =====================================================
    Off-chain Virtual Credit Endpoints & Transaction Logging
-   -------------------------------------------------- */
+   ===================================================== */
+
 // In-memory store for individual user balances (keyed by wallet address)
 const userBalances = {};
-// Global variable to aggregate losses (house funds)
+// Global variable to accumulate losses (i.e. funds for the house)
 let houseFunds = 0;
-// In-memory transaction log
+// In-memory transaction log (an array of transaction objects)
 let transactions = [];
 
-// GET user's off-chain balance
+// GET a user's off-chain balance
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const balance = userBalances[wallet] || "0";
@@ -60,10 +64,11 @@ app.get('/api/user/:walletAddress', (req, res) => {
 
 /*
   POST /api/user/:walletAddress 
-  Expects: { "balanceChange": <number> }
-  Updates the user's virtual balance (ensuring it does not fall below 0),
-  and if the balanceChange is negative, adds the absolute value to houseFunds.
-  Also logs the transaction.
+  Expects JSON: { "balanceChange": <number> }
+  Updates the player's off-chain balance relative to the current balance.
+  If the balance would drop below 0, it is set to 0.
+  Negative changes (losses) are added to houseFunds.
+  A transaction log is recorded.
 */
 app.post('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -71,7 +76,7 @@ app.post('/api/user/:walletAddress', (req, res) => {
   if (balanceChange === undefined) {
     return res.status(400).json({ error: "balanceChange is required" });
   }
-  const currentBalance = parseFloat(userBalances[wallet] || "0");
+  let currentBalance = parseFloat(userBalances[wallet] || "0");
   let change = parseFloat(balanceChange);
   let newBalance = currentBalance + change;
   if (newBalance < 0) {
@@ -82,24 +87,30 @@ app.post('/api/user/:walletAddress', (req, res) => {
   if (change < 0) {
     houseFunds += Math.abs(change);
   }
-  // Log transaction
+  // Record transaction log entry
   transactions.push({
     address: wallet,
     amount: change.toString(),
-    status: change < 0 ? "loss" : (change > 0 ? "win" : "neutral"),
+    status: (change < 0) ? "loss" : (change > 0 ? "win" : "neutral"),
     date: new Date()
   });
   res.json({ wallet, newBalance: userBalances[wallet] });
 });
 
+// GET transaction logs
+app.get('/api/transactions', (req, res) => {
+  res.json({ transactions });
+});
+
 /*
   POST /api/player/reconcile 
-  Expects: { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
-  Calculates netChange = finalBalance - initialDeposit.
-  Then, triggers an on-chain transfer:
-    - If netChange > 0, call winBet() to send tokens from house wallet to player.
-    - If netChange < 0, call loseBet() to transfer tokens from player's wallet to house wallet.
-  Returns transaction details.
+  Reconciles a player's session by calculating:
+    netChange = finalBalance - initialDeposit
+  Then triggers on-chain settlement:
+    - If netChange > 0, calls winBet() (transfer MET from house wallet to player)
+    - If netChange < 0, calls loseBet() (transfer MET from player's wallet to house wallet)
+  For demonstration, on-chain transfers are simulated.
+  Expects JSON: { "wallet": "<walletAddress>", "initialDeposit": <number>, "finalBalance": <number> }
 */
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet, initialDeposit, finalBalance } = req.body;
@@ -111,25 +122,21 @@ app.post('/api/player/reconcile', async (req, res) => {
   let txResult = null;
   try {
     if (netChange > 0) {
-      // Player wins: transfer tokens from the house wallet to the player's wallet.
-      console.log(`Initiating winBet for ${normalizedWallet} amount: ${netChange}`);
+      console.log(`winBet: Transferring ${netChange} MET from house wallet to ${normalizedWallet}`);
       txResult = await metContract.winBet(normalizedWallet, ethers.utils.parseUnits(netChange.toString(), 18));
     } else if (netChange < 0) {
-      // Player loses: transfer tokens from the player's wallet to the house wallet.
-      // Note: For loseBet, the player must have sufficient on-chain balance.
-      console.log(`Initiating loseBet for ${normalizedWallet} amount: ${Math.abs(netChange)}`);
+      console.log(`loseBet: Transferring ${Math.abs(netChange)} MET from ${normalizedWallet} to house wallet`);
       txResult = await metContract.loseBet(normalizedWallet, ethers.utils.parseUnits(Math.abs(netChange).toString(), 18));
     } else {
-      // No net change, no on-chain action.
       return res.json({
         wallet: normalizedWallet,
         netChange,
         message: "No net change, no on-chain settlement necessary."
       });
     }
-    console.log("Waiting for transaction confirmation...");
+    console.log("Awaiting on-chain confirmation...");
     const receipt = await txResult.wait();
-    // Log the reconciliation transaction.
+    // Log reconciliation transaction.
     transactions.push({
       address: normalizedWallet,
       amount: netChange.toString(),
@@ -144,8 +151,8 @@ app.post('/api/player/reconcile', async (req, res) => {
       netChange,
       txHash: receipt.transactionHash,
       message: netChange < 0
-        ? `Player lost ${Math.abs(netChange)} MET; on-chain tokens deducted from player and sent to house wallet.`
-        : `Player won ${netChange} MET; on-chain tokens transferred from house wallet to player.`
+        ? `Player lost ${Math.abs(netChange)} MET; on-chain deducted from player and sent to house wallet.`
+        : `Player won ${netChange} MET; on-chain transferred from house wallet to player.`
     });
   } catch (error) {
     console.error("On-chain settlement failed:", error);
@@ -153,9 +160,13 @@ app.post('/api/player/reconcile', async (req, res) => {
   }
 });
 
+/* --------------------------------------------------
+   Admin Endpoints
+   -------------------------------------------------- */
+
 /*
-  GET /api/admin/house-funds 
-  Protected endpoint: returns aggregated houseFunds.
+  GET /api/admin/house-funds
+  Protected by JWT; returns aggregated houseFunds.
 */
 app.get('/api/admin/house-funds', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -172,8 +183,9 @@ app.get('/api/admin/house-funds', (req, res) => {
 });
 
 /*
-  POST /api/admin/cashout-house 
-  Protected endpoint: resets houseFunds to 0 and, in production, would trigger an on-chain transfer.
+  POST /api/admin/cashout-house
+  Protected by JWT; resets houseFunds to 0.
+  In production, this would trigger an on-chain transfer from the house wallet.
 */
 app.post('/api/admin/cashout-house', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -195,7 +207,7 @@ app.post('/api/admin/cashout-house', (req, res) => {
 });
 
 /* --------------------------------------------------
-   Other Endpoints (Win Percentage, Transactions, Admin Login, etc.)
+   Other Endpoints (Win Percentage, Admin Login, etc.)
    -------------------------------------------------- */
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 
@@ -213,7 +225,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
-// Admin login endpoint: returns a JWT token for the admin.
+// Admin login endpoint: returns a JWT token.
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
@@ -224,7 +236,7 @@ app.post("/admin/login", (req, res) => {
   }
 });
 
-// (You can add additional endpoints such as for transaction logs if desired)
+// (Optional: additional endpoints such as for recording transactions can be added here.)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
