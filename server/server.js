@@ -13,12 +13,15 @@ const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 
 app.use(cors());
 app.use(bodyParser.json());
-// Serve HTML pages from the "views" folder
+// Serve static files from "views", "public", and mount "items" at /items
 app.use(express.static(path.join(__dirname, 'views')));
-// Serve static assets (JS, CSS) from the "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
-// Serve images and other assets from the "items" folder under the "/items" URL
 app.use('/items', express.static(path.join(__dirname, 'items')));
+
+// Explicit route for the home page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+});
 
 // In-memory storage for win percentage and transactions
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
