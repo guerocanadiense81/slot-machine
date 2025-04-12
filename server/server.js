@@ -20,7 +20,7 @@ app.use('/items', express.static(path.join(__dirname, '../items')));
 
 // Explicit route for the home page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', '../index.html'));
+  res.sendFile(path.join(__dirname, '../views', 'index.html'));
 });
 
 // In-memory storage for win percentage and transactions
