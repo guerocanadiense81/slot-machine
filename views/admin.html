@@ -2,29 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Panel</title>
   <link rel="stylesheet" href="/admin.css">
   <script src="/admin.js" defer></script>
 </head>
 <body>
   <h1>Admin Panel</h1>
+  <section id="houseFundsSection">
+    <h2>House Funds (Accumulated Losses)</h2>
+    <p>Current House Funds: <span id="houseFundsDisplay">0</span> MET</p>
+    <button id="cashOutHouseButton">Cash Out House Funds</button>
+    <div id="houseCashoutMessage"></div>
+  </section>
   
-  <!-- Section to display transaction logs -->
   <section id="transactionLogs">
     <h2>Transaction Log</h2>
     <div id="logContainer">Loading logs...</div>
   </section>
   
-  <!-- Section for triggering cash-out for a specific player -->
-  <section id="cashoutSection">
-    <h2>Cash Out for Player</h2>
-    <input type="text" id="playerWallet" placeholder="Player Wallet Address" required>
-    <button id="cashoutButton">Cash Out</button>
-    <div id="cashoutMessage"></div>
-  </section>
-  
-  <!-- Optionally: A logout button -->
   <button id="logoutButton">Logout</button>
 </body>
 </html>
