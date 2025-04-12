@@ -2,7 +2,6 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
-
   window.offchainBalance = 0;
   window.initialDeposit = 0;
 
@@ -20,14 +19,16 @@ document.addEventListener("DOMContentLoaded", () => {
       window.userWallet = walletAddress;
       alert("Wallet connected: " + walletAddress);
       
-      // Fetch off-chain balance from the backend.
+      // Fetch off-chain balance (includes deposit and net play balance)
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       const data = await response.json();
-      console.log("Fetched off-chain balance:", data.balance);
+      console.log("Fetched off-chain balance:", data);
       const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) creditsDisplay.innerText = data.balance;
+      if (creditsDisplay) creditsDisplay.innerText = data.total;
+      // For gameplay, store only the net win/loss portion.
       window.offchainBalance = parseFloat(data.balance) || 0;
-      window.initialDeposit = window.offchainBalance;
+      // Record the initial deposit separately.
+      window.initialDeposit = parseFloat(data.deposit) || 0;
       
       // Fetch on-chain MET balance for display.
       await getOnChainMETBalance();
@@ -64,40 +65,65 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Connect Wallet button not found in DOM.");
   }
 
-  window.updateInGameBalance = async function(balanceChange) {
+  // Function to update off-chain balance via gameplay delta.
+  window.updateInGameBalance = async function(delta) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
       return;
     }
     try {
-      const response = await fetch(`/api/user/${window.userWallet.toLowerCase()}`, {
+      const response = await fetch(`/api/balance-change/${window.userWallet.toLowerCase()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ balanceChange: balanceChange })
+        body: JSON.stringify({ delta: delta })
       });
       const result = await response.json();
       console.log("Off-chain balance updated on backend:", result);
+      // Update the display (total = deposit + balance)
+      const deposit = parseFloat(result.deposit || "0");
+      const balance = parseFloat(result.newBalance || "0");
+      const total = deposit + balance;
       const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) creditsDisplay.innerText = result.newBalance;
-      window.offchainBalance = parseFloat(result.newBalance);
+      if (creditsDisplay) creditsDisplay.innerText = total.toString();
+      // Update the net play balance
+      window.offchainBalance = balance;
       return result.newBalance;
     } catch (error) {
       console.error("Error updating off-chain balance:", error);
     }
   };
 
+  // Manual deposit: calls deposit-offchain endpoint.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
-    let depositAmount = parseFloat(depositInput.value);
-    if (isNaN(depositAmount) || depositAmount <= 0) {
+    let amount = parseFloat(depositInput.value);
+    if (isNaN(amount) || amount <= 0) {
       alert("Please enter a valid deposit amount.");
       return;
     }
-    console.log("Depositing MET. Current balance:", window.offchainBalance, "Deposit:", depositAmount);
-    await window.updateInGameBalance(depositAmount);
-    alert("Deposit successful! New off-chain balance: " + window.offchainBalance + " MET");
+    try {
+      const response = await fetch(`/api/deposit-offchain/${window.userWallet.toLowerCase()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: amount })
+      });
+      const result = await response.json();
+      console.log("Deposit recorded:", result);
+      alert(result.message);
+      // After deposit, refresh the user's display.
+      const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
+      const userData = await userResponse.json();
+      const total = parseFloat(userData.deposit || "0") + parseFloat(userData.balance || "0");
+      const creditsDisplay = document.getElementById("credits-display");
+      if (creditsDisplay) creditsDisplay.innerText = total.toString();
+      window.initialDeposit = parseFloat(userData.deposit) || 0;
+    } catch (error) {
+      console.error("Error during manual deposit:", error);
+    }
   };
 
+  // Reconcile session: calls /api/player/reconcile.
+  // It uses the locked deposit and the net off-chain balance.
   window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
