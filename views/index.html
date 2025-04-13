@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slot Machine - Free Version</title>
-  <link rel="stylesheet" href="/style.css">
-  <!-- Include scripts for the free version -->
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- Scripts for basic behavior, win logic, and wallet (for updating credits) -->
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
-  <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <script src="/wallet.js" defer></script>
 </head>
 <body>
   <nav>
@@ -19,6 +19,16 @@
     <a href="/instructions.html">Instructions</a>
   </nav>
 
+  <!-- Credits & Bet Area -->
+  <div id="wallet">
+    <div>
+      Credits: <span id="credits-display">1000</span> MET
+    </div>
+    <div>
+      Bet: <input type="number" id="bet-input" value="50" min="1" />
+    </div>
+  </div>
+
   <!-- Slot Machine Container (5 Reels) -->
   <div id="container">
     <div class="window-border">
@@ -27,52 +37,56 @@
         <div class="outer-spacer"></div>
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 2 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 3 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 4 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 5 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
       </div>
     </div>
+
+    <!-- Message Display -->
+    <div id="message-display"></div>
+
     <!-- Spin Button -->
-    <input type="button" onclick="spin(this)" class="start-button" value="Spin">
+    <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
   </div>
 </body>
 </html>
