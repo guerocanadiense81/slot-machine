@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.userWallet = walletAddress;
       alert("Wallet connected: " + walletAddress);
       
-      // Fetch off-chain data from the backend.
+      // Fetch off-chain data for the wallet
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       const data = await response.json();
       console.log("Fetched off-chain user data:", data);
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Connect Wallet button not found in DOM.");
   }
 
-  // Update net play balance with a given delta (win or loss update)
+  // updateInGameBalance: sends a POST to update net play balance.
   window.updateInGameBalance = async function(delta) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       console.log("Balance update response:", result);
-      // Refresh user data
+      // Refresh the user's off-chain data
       const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
       const data = await userResponse.json();
       console.log("Refreshed off-chain user data:", data);
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Manual deposit – calls deposit endpoint
+  // Manual deposit function: calls the deposit endpoint.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     let amount = parseFloat(depositInput.value);
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
       console.log("Deposit response:", result);
       alert(result.message);
-      // Refresh user data after deposit
+      // Refresh the user's off-chain data after the deposit.
       const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
       const data = await userResponse.json();
       console.log("Post-deposit off-chain user data:", data);
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Reconcile session (trigger on-chain settlement) using net play balance only.
+  // Reconcile the session by calling the reconcile endpoint.
   window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
