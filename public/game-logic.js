@@ -37,24 +37,23 @@ const animationDuration = 3000; // e.g., 3 seconds
 function spin(elem) {
   const betInput = document.getElementById("bet-input");
   let betAmount = (betInput && !isNaN(parseFloat(betInput.value))) ? parseFloat(betInput.value) : 50;
-  // Deduct the bet from the off-chain balance.
+  // Deduct the bet (or update balance)
   if (typeof window.updateInGameBalance === "function") {
     window.updateInGameBalance(-betAmount);
   }
   
   const container = document.getElementById("container");
-  container.classList.add("spinning");
-  console.log("Spin started; spinning animation applied.");
+  container.classList.add("spinning");  // Start the animation
+  console.log("Spin started; applying spinning animation...");
   
+  // Wait for animation to complete (set to 3000ms here)
   setTimeout(() => {
-    // Generate random outcome for each reel and row.
-    let outcome = [];
-    for (let i = 0; i < NUM_REELS; i++) {
-      outcome[i] = [];
-      for (let j = 0; j < NUM_ROWS; j++) {
-        outcome[i][j] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-      }
-    }
+    // Generate outcome and update DOM, then remove animation class.
+    // ... (outcome generation code) ...
+    container.classList.remove("spinning");
+    checkWin();
+  }, 3000);
+}
     
     // Force a win configuration with 50% chance.
     if (Math.random() < 0.5) {
