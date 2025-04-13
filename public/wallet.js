@@ -2,86 +2,107 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
+  
+  // Defaults for free version when wallet is not available.
   window.offchainBalance = 0;
   window.initialDeposit = 0;
-  let isRequestingAccounts = false; // flag to prevent duplicate account requests
 
-  async function connectWalletAndLoadBalances() {
-    if (isRequestingAccounts) {
-      console.log("Already processing wallet connection request. Please wait.");
-      return;
-    }
-    console.log("Connect Wallet button clicked.");
-    if (!window.ethereum) {
-      alert("MetaMask not detected. Please install MetaMask.");
-      return;
-    }
-    isRequestingAccounts = true;
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || !accounts.length) {
-        console.log("No accounts returned.");
-        isRequestingAccounts = false;
+  // If MetaMask is not available, we assume free version and assign default credits.
+  if (!window.ethereum) {
+    console.log("MetaMask not detected. Using default free version balance of 1000 MET.");
+    window.initialDeposit = 1000;
+    window.offchainBalance = 0;
+    const creditsDisplay = document.getElementById("credits-display");
+    if (creditsDisplay) creditsDisplay.innerText = "1000";
+    // Skip wallet connection and on-chain balance retrieval.
+  } else {
+    // Flag to prevent duplicate wallet account requests.
+    let isRequestingAccounts = false;
+
+    async function connectWalletAndLoadBalances() {
+      if (isRequestingAccounts) {
+        console.log("Already processing wallet connection request. Please wait.");
         return;
       }
-      const walletAddress = accounts[0];
-      console.log("Connected wallet:", walletAddress);
-      window.userWallet = walletAddress;
-      alert("Wallet connected: " + walletAddress);
-      
-      // Fetch off-chain data from backend
-      const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
-      const data = await response.json();
-      console.log("Fetched off-chain user data:", data);
-      const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) {
-        creditsDisplay.innerText = data.total;
+      console.log("Connect Wallet button clicked.");
+      isRequestingAccounts = true;
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        if (!accounts || !accounts.length) {
+          console.log("No accounts returned.");
+          isRequestingAccounts = false;
+          return;
+        }
+        const walletAddress = accounts[0];
+        console.log("Connected wallet:", walletAddress);
+        window.userWallet = walletAddress;
+        alert("Wallet connected: " + walletAddress);
+
+        // Fetch off-chain data from the backend.
+        const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
+        const data = await response.json();
+        console.log("Fetched off-chain user data:", data);
+        const creditsDisplay = document.getElementById("credits-display");
+        if (creditsDisplay) {
+          creditsDisplay.innerText = data.total;
+        }
+        window.offchainBalance = parseFloat(data.balance) || 0;
+        window.initialDeposit = parseFloat(data.deposit) || 0;
+
+        await getOnChainMETBalance();
+      } catch (error) {
+        console.error("Error connecting wallet:", error);
+        alert("Error connecting wallet. Check console for details.");
+      } finally {
+        isRequestingAccounts = false;
       }
-      window.offchainBalance = parseFloat(data.balance) || 0;
-      window.initialDeposit = parseFloat(data.deposit) || 0;
-      
-      await getOnChainMETBalance();
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      alert("Error connecting wallet. Check console for details.");
-    } finally {
-      isRequestingAccounts = false;
+    }
+
+    async function getOnChainMETBalance() {
+      if (!window.ethereum) return;
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const walletAddress = await signer.getAddress();
+        const MET_ABI = ["function balanceOf(address owner) view returns (uint256)"];
+        const MET_CONTRACT_ADDRESS = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
+        const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, provider);
+        const balanceBN = await metContract.balanceOf(walletAddress);
+        const formattedBalance = ethers.utils.formatUnits(balanceBN, 18);
+        const onChainBalanceElement = document.getElementById("metOnChainBalance");
+        if (onChainBalanceElement) {
+          onChainBalanceElement.innerText = formattedBalance;
+        }
+        console.log("On-chain MET balance:", formattedBalance);
+      } catch (error) {
+        console.error("Error fetching on-chain MET balance:", error);
+      }
+    }
+
+    const connectWalletBtn = document.getElementById("connectWallet");
+    if (connectWalletBtn) {
+      connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
+      console.log("connectWallet event listener attached.");
+    } else {
+      console.error("Connect Wallet button not found in DOM.");
     }
   }
 
-  async function getOnChainMETBalance() {
-    if (!window.ethereum) return;
-    try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // Use send method to ensure accounts are available
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const walletAddress = await signer.getAddress();
-      const MET_ABI = ["function balanceOf(address owner) view returns (uint256)"];
-      const MET_CONTRACT_ADDRESS = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
-      const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, provider);
-      const balanceBN = await metContract.balanceOf(walletAddress);
-      const formattedBalance = ethers.utils.formatUnits(balanceBN, 18);
-      const onChainBalanceElement = document.getElementById("metOnChainBalance");
-      if (onChainBalanceElement) {
-        onChainBalanceElement.innerText = formattedBalance;
-      }
-      console.log("On-chain MET balance:", formattedBalance);
-    } catch (error) {
-      console.error("Error fetching on-chain MET balance:", error);
-    }
-  }
-
-  const connectWalletBtn = document.getElementById("connectWallet");
-  if (connectWalletBtn) {
-    connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
-    console.log("connectWallet event listener attached.");
-  } else {
-    console.error("Connect Wallet button not found in DOM.");
-  }
-
-  // updateInGameBalance sends a POST request to update net play balance
+  // updateInGameBalance: sends a POST to update the net play balance.
   window.updateInGameBalance = async function(delta) {
+    // In free version with default balances, we can simply update the UI.
+    if (!window.userWallet && !window.ethereum) {
+      // Free version simulation
+      console.log(`Updating simulated off-chain balance by ${delta} MET`);
+      let current = parseFloat(document.getElementById("credits-display").innerText) || 0;
+      current += delta;
+      document.getElementById("credits-display").innerText = current.toString();
+      window.initialDeposit = current;  // Reflect simulated deposit.
+      window.offchainBalance = 0;
+      return current;
+    }
+
     if (!window.userWallet) {
       alert("Wallet not connected.");
       return;
@@ -94,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       console.log("Balance update response:", result);
-      // Refresh user data after updating the balance
+      // Refresh the user's off-chain data
       const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
       const data = await userResponse.json();
       console.log("Refreshed off-chain user data:", data);
@@ -110,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Manual deposit function: calls the deposit endpoint.
+  // manualDeposit: calls the deposit endpoint.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     let amount = parseFloat(depositInput.value);
@@ -119,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     try {
-      const response = await fetch(`/api/deposit-offchain/${window.userWallet.toLowerCase()}`, {
+      const response = await fetch(`/api/deposit-offchain/${window.userWallet ? window.userWallet.toLowerCase() : "free"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: amount })
@@ -127,8 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
       console.log("Deposit response:", result);
       alert(result.message);
-      // Refresh off-chain data after deposit.
-      const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
+      // Refresh user data after deposit.
+      const userResponse = await fetch(`/api/user/${window.userWallet ? window.userWallet.toLowerCase() : "free"}`);
       const data = await userResponse.json();
       console.log("Post-deposit off-chain user data:", data);
       const total = parseFloat(data.deposit) + parseFloat(data.balance);
@@ -143,8 +164,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Reconcile session: calls the reconcile endpoint to settle on-chain wins/losses.
+  // reconcileSession: calls the reconcile endpoint.
   window.reconcileSession = async function() {
+    if (!window.userWallet && !window.ethereum) {
+      alert("Free version mode: no on-chain reconciliation necessary.");
+      return;
+    }
     if (!window.userWallet) {
       alert("Wallet not connected.");
       return;
