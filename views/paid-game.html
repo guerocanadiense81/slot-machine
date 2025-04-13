@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slot Machine - Paid Version</title>
-  <link rel="stylesheet" href="/paid.css">
-  <!-- Include ethers.js -->
+  <link rel="stylesheet" href="/paid.css" />
+  <!-- Optional favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <!-- Include ethers.js for wallet interaction -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <!-- Standard scripts used by the game -->
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
   <script src="/wallet.js" defer></script>
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <nav>
@@ -21,8 +23,8 @@
   </nav>
 
   <!-- Wallet & Balance Section -->
-  <div id="wallet">
-    <div id="metBalance">
+  <div id="wallet" style="margin: 1em auto;">
+    <div>
       Off-chain Balance: <span id="credits-display">0</span> MET
     </div>
     <div>
@@ -32,22 +34,22 @@
   </div>
 
   <!-- Deposit Section -->
-  <div id="depositSection">
+  <div id="depositSection" style="margin: 1em auto;">
     <h3>Manual Deposit</h3>
-    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET">
+    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET" />
     <button onclick="manualDeposit()">Deposit MET</button>
   </div>
 
-  <!-- Reconciliation Section -->
-  <div id="cashOutSection">
+  <!-- Reconciliation / Finish Game Section -->
+  <div id="cashOutSection" style="margin: 1em auto;">
     <h3>Finish Game & Cash Out</h3>
     <button onclick="reconcileSession()">Finish Game (Reconcile)</button>
   </div>
 
   <!-- Game UI Panel -->
-  <div id="game-ui">
+  <div id="game-ui" style="margin: 1em auto; color: #fff;">
     <div>
-      Bet: <input type="number" id="bet-input" value="50" min="1">
+      Bet: <input type="number" id="bet-input" value="50" min="1" />
     </div>
     <div id="message-display"></div>
   </div>
@@ -56,56 +58,58 @@
   <div id="container">
     <div class="window-border">
       <div class="window">
+        <!-- Each reel (.outer-col) contains a .col with three .icon elements -->
         <div class="outer-spacer"></div>
         <!-- Reel 1 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 2 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 3 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 4 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
         <!-- Reel 5 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
       </div>
     </div>
+
     <!-- Spin Button -->
-    <input type="button" onclick="spin(this)" class="start-button" value="Spin">
+    <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
   </div>
 </body>
 </html>
