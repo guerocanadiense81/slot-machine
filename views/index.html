@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slot Machine - Free Version</title>
   <link rel="stylesheet" href="/style.css" />
-  <!-- Optional favicon (place favicon.ico in your public folder) -->
+  <!-- Optional favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <!-- Scripts: Our free-wallet.js simulates deposit/credits; game-logic.js handles the spin outcome -->
+  <!-- Free mode scripts -->
   <script src="/free-wallet.js" defer></script>
   <script src="/game-logic.js" defer></script>
 </head>
@@ -28,19 +28,19 @@
       Bet: <input type="number" id="bet-input" value="50" min="1" />
     </div>
   </div>
-  
-  <!-- Deposit Section (for simulation only; in free mode you can optionally allow deposit changes) -->
+
+  <!-- Deposit Section (for simulation only) -->
   <div id="depositSection" style="margin:1em;">
     <h3>Manual Deposit (Free Mode)</h3>
     <input type="number" id="depositInput" placeholder="Enter deposit amount in MET" />
     <button onclick="manualDeposit()">Deposit MET</button>
   </div>
   
-  <!-- Slot Machine Container (5 reels) -->
+  <!-- Slot Machine Container (5 Reels) -->
   <div id="container">
     <div class="window-border">
       <div class="window">
-        <!-- Each reel is represented by .outer-col which contains a .col with 3 .icon items -->
+        <!-- Each reel (.outer-col) contains a .col with three .icon elements -->
         <div class="outer-spacer"></div>
         <!-- Reel 1 -->
         <div class="outer-col">
@@ -87,12 +87,12 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
-      </div> <!-- .window -->
-    </div> <!-- .window-border -->
-    
+      </div>
+    </div>
+
     <!-- Message Display -->
     <div id="message-display"></div>
-    
+
     <!-- Spin Button -->
     <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
   </div>
