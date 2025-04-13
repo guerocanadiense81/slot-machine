@@ -13,25 +13,25 @@ const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 
 // --- Security & Caching Middleware ---
-// Disable X-Powered-By header to hide Express
+// Disable the x-powered-by header so Express is not revealed.
 app.disable("x-powered-by");
 
-// Set Cache-Control header (cache static resources for 1 hour)
+// Set Cache-Control header for static assets to a high max-age so updates use cache busting.
 app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "public, max-age=3600");
+  // Adjust max-age as needed; here we set 1 year for static resources.
+  // You could use a conditional check (only set for assets) if needed.
+  res.setHeader("Cache-Control", "public, max-age=31536000");
   next();
 });
 
-// Prevent MIME type sniffing by setting X-Content-Type-Options header
+// Remove CSP header if it's not required. If you do need CSP, you can include one that allows eval if absolutely necessary:
+// For example, if you MUST allow eval (not recommended), you can add 'unsafe-eval' in script-src.
+// If not needed, simply do not set the Content-Security-Policy header.
 app.use((req, res, next) => {
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  next();
-});
-
-// Set a basic Content Security Policy header.
-// Adjust the policy below to suit your needs. Here we allow scripts only from self.
-app.use((req, res, next) => {
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'");
+  // Option 1: Remove the CSP header completely
+  // (Do not set any Content-Security-Policy header if your app does not require it.)
+  // Option 2: Set a minimal CSP header without blocking eval, if necessary:
+  // res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-eval'");
   next();
 });
 
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from siblings (views, public, items)
+// Serve static files from the sibling folders
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
@@ -51,11 +51,8 @@ app.get('/', (req, res) => {
 /* =====================================================
    On-chain Settlement Setup via ethers.js
    ===================================================== */
-// Set up ethers provider and house signer using your PRIVATE_KEY
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-
-// Minimal ABI for winBet and loseBet functions.
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -66,13 +63,10 @@ const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSign
 /* =====================================================
    Off-chain Virtual Balance & Transaction Logging
    ===================================================== */
-// Two mappings:
-// • userOffchainDeposit: the locked deposit (on-chain deposit amount)
-// • userOffchainBalance: the net play balance (wins/losses from gameplay)
 const userOffchainDeposit = {};
 const userOffchainBalance = {};
-let houseFunds = 0; // Aggregated losses from negative deltas
-let transactions = []; // In-memory log of transactions
+let houseFunds = 0;
+let transactions = [];
 
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
@@ -82,7 +76,6 @@ app.get('/api/user/:walletAddress', (req, res) => {
   res.json({ wallet, deposit: deposit.toString(), balance: balance.toString(), total });
 });
 
-// Endpoint to record a deposit (locked funds)
 app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { amount } = req.body;
@@ -103,7 +96,6 @@ app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   res.json({ wallet, newDeposit: userOffchainDeposit[wallet], message: "Deposit recorded." });
 });
 
-// Endpoint to update net play balance (wins/losses)
 app.post('/api/balance-change/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { delta } = req.body;
@@ -129,7 +121,6 @@ app.post('/api/balance-change/:walletAddress', (req, res) => {
   res.json({ wallet, newBalance: userOffchainBalance[wallet] });
 });
 
-// Reconciliation endpoint: uses net play balance to settle on chain.
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet } = req.body;
   if (!wallet) return res.status(400).json({ error: "Wallet is required" });
@@ -147,7 +138,7 @@ app.post('/api/player/reconcile', async (req, res) => {
     } else {
       return res.json({ wallet: normalized, netChange, message: "No net change; on-chain settlement not required." });
     }
-    console.log("Waiting for on-chain confirmation...");
+    console.log("Awaiting on-chain confirmation...");
     const receipt = await txResult.wait();
     console.log("On-chain transaction confirmed:", receipt.transactionHash);
     transactions.push({
@@ -172,7 +163,6 @@ app.post('/api/player/reconcile', async (req, res) => {
   }
 });
 
-// Admin endpoints
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
