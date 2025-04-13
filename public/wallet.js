@@ -4,27 +4,39 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM fully loaded; initializing wallet connection...");
   window.offchainBalance = 0;
   window.initialDeposit = 0;
+  let isRequestingAccounts = false; // flag to prevent duplicate account requests
 
   async function connectWalletAndLoadBalances() {
+    if (isRequestingAccounts) {
+      console.log("Already processing wallet connection request. Please wait.");
+      return;
+    }
     console.log("Connect Wallet button clicked.");
     if (!window.ethereum) {
       alert("MetaMask not detected. Please install MetaMask.");
       return;
     }
+    isRequestingAccounts = true;
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || !accounts.length) return;
+      if (!accounts || !accounts.length) {
+        console.log("No accounts returned.");
+        isRequestingAccounts = false;
+        return;
+      }
       const walletAddress = accounts[0];
       console.log("Connected wallet:", walletAddress);
       window.userWallet = walletAddress;
       alert("Wallet connected: " + walletAddress);
       
-      // Fetch off-chain data
+      // Fetch off-chain data from backend
       const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
       const data = await response.json();
       console.log("Fetched off-chain user data:", data);
       const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) creditsDisplay.innerText = data.total;
+      if (creditsDisplay) {
+        creditsDisplay.innerText = data.total;
+      }
       window.offchainBalance = parseFloat(data.balance) || 0;
       window.initialDeposit = parseFloat(data.deposit) || 0;
       
@@ -32,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error connecting wallet:", error);
       alert("Error connecting wallet. Check console for details.");
+    } finally {
+      isRequestingAccounts = false;
     }
   }
 
@@ -39,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!window.ethereum) return;
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // Use send method to ensure accounts are available
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
       const walletAddress = await signer.getAddress();
@@ -48,7 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const balanceBN = await metContract.balanceOf(walletAddress);
       const formattedBalance = ethers.utils.formatUnits(balanceBN, 18);
       const onChainBalanceElement = document.getElementById("metOnChainBalance");
-      if (onChainBalanceElement) onChainBalanceElement.innerText = formattedBalance;
+      if (onChainBalanceElement) {
+        onChainBalanceElement.innerText = formattedBalance;
+      }
+      console.log("On-chain MET balance:", formattedBalance);
     } catch (error) {
       console.error("Error fetching on-chain MET balance:", error);
     }
@@ -62,6 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Connect Wallet button not found in DOM.");
   }
 
+  // updateInGameBalance sends a POST request to update net play balance
   window.updateInGameBalance = async function(delta) {
     if (!window.userWallet) {
       alert("Wallet not connected.");
@@ -75,12 +94,15 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const result = await response.json();
       console.log("Balance update response:", result);
+      // Refresh user data after updating the balance
       const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
       const data = await userResponse.json();
       console.log("Refreshed off-chain user data:", data);
       const total = parseFloat(data.deposit) + parseFloat(data.balance);
       const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) creditsDisplay.innerText = total.toString();
+      if (creditsDisplay) {
+        creditsDisplay.innerText = total.toString();
+      }
       window.offchainBalance = parseFloat(data.balance) || 0;
       return data.balance;
     } catch (error) {
@@ -88,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // Manual deposit function: calls the deposit endpoint.
   window.manualDeposit = async function() {
     const depositInput = document.getElementById("depositInput");
     let amount = parseFloat(depositInput.value);
@@ -104,18 +127,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
       console.log("Deposit response:", result);
       alert(result.message);
+      // Refresh off-chain data after deposit.
       const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
       const data = await userResponse.json();
       console.log("Post-deposit off-chain user data:", data);
       const total = parseFloat(data.deposit) + parseFloat(data.balance);
       const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) creditsDisplay.innerText = total.toString();
+      if (creditsDisplay) {
+        creditsDisplay.innerText = total.toString();
+      }
       window.initialDeposit = parseFloat(data.deposit) || 0;
     } catch (error) {
       console.error("Error during deposit:", error);
+      alert("Error during deposit. Check console for details.");
     }
   };
 
+  // Reconcile session: calls the reconcile endpoint to settle on-chain wins/losses.
   window.reconcileSession = async function() {
     if (!window.userWallet) {
       alert("Wallet not connected.");
