@@ -12,10 +12,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 
+// --- Security & Caching Middleware ---
+// Disable X-Powered-By header to hide Express
+app.disable("x-powered-by");
+
+// Set Cache-Control header (cache static resources for 1 hour)
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  next();
+});
+
+// Prevent MIME type sniffing by setting X-Content-Type-Options header
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
+
+// Set a basic Content Security Policy header.
+// Adjust the policy below to suit your needs. Here we allow scripts only from self.
+app.use((req, res, next) => {
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'");
+  next();
+});
+
+// --- Enable CORS and Body Parsing ---
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from views, public, and items.
+// Serve static files from siblings (views, public, items)
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
@@ -27,11 +51,11 @@ app.get('/', (req, res) => {
 /* =====================================================
    On-chain Settlement Setup via ethers.js
    ===================================================== */
-// Create a provider and a signer for the house wallet.
+// Set up ethers provider and house signer using your PRIVATE_KEY
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Minimal ABI for winBet and loseBet.
+// Minimal ABI for winBet and loseBet functions.
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -40,9 +64,11 @@ const MET_CONTRACT_ADDRESS = process.env.MET_CONTRACT_ADDRESS;
 const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSigner);
 
 /* =====================================================
-   Off-chain Virtual Balance and Transaction Logging
+   Off-chain Virtual Balance & Transaction Logging
    ===================================================== */
-// Two mappings: one for the locked deposit, one for net play balance.
+// Two mappings:
+// • userOffchainDeposit: the locked deposit (on-chain deposit amount)
+// • userOffchainBalance: the net play balance (wins/losses from gameplay)
 const userOffchainDeposit = {};
 const userOffchainBalance = {};
 let houseFunds = 0; // Aggregated losses from negative deltas
@@ -56,7 +82,7 @@ app.get('/api/user/:walletAddress', (req, res) => {
   res.json({ wallet, deposit: deposit.toString(), balance: balance.toString(), total });
 });
 
-// Deposit endpoint – records the locked deposit.
+// Endpoint to record a deposit (locked funds)
 app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { amount } = req.body;
@@ -77,7 +103,7 @@ app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   res.json({ wallet, newDeposit: userOffchainDeposit[wallet], message: "Deposit recorded." });
 });
 
-// Update balance endpoint – updates net play balance.
+// Endpoint to update net play balance (wins/losses)
 app.post('/api/balance-change/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { delta } = req.body;
@@ -103,7 +129,7 @@ app.post('/api/balance-change/:walletAddress', (req, res) => {
   res.json({ wallet, newBalance: userOffchainBalance[wallet] });
 });
 
-// Reconcile endpoint – uses net play balance to call winBet or loseBet.
+// Reconciliation endpoint: uses net play balance to settle on chain.
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet } = req.body;
   if (!wallet) return res.status(400).json({ error: "Wallet is required" });
@@ -146,7 +172,7 @@ app.post('/api/player/reconcile', async (req, res) => {
   }
 });
 
-// Admin endpoints:
+// Admin endpoints
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
