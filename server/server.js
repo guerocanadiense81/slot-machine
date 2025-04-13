@@ -13,33 +13,29 @@ const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET || "defaultsecret";
 
 // --- Security & Caching Middleware ---
-// Disable the x-powered-by header so Express is not revealed.
+// Disable Express header
 app.disable("x-powered-by");
-
-// Set Cache-Control header for static assets to a high max-age so updates use cache busting.
+// Set Cache-Control header for static resources (e.g. 1 year)
 app.use((req, res, next) => {
-  // Adjust max-age as needed; here we set 1 year for static resources.
-  // You could use a conditional check (only set for assets) if needed.
   res.setHeader("Cache-Control", "public, max-age=31536000");
   next();
 });
-
-// Remove CSP header if it's not required. If you do need CSP, you can include one that allows eval if absolutely necessary:
-// For example, if you MUST allow eval (not recommended), you can add 'unsafe-eval' in script-src.
-// If not needed, simply do not set the Content-Security-Policy header.
+// Set X-Content-Type-Options header
 app.use((req, res, next) => {
-  // Option 1: Remove the CSP header completely
-  // (Do not set any Content-Security-Policy header if your app does not require it.)
-  // Option 2: Set a minimal CSP header without blocking eval, if necessary:
-  // res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-eval'");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  next();
+});
+// (Optional) Remove or adjust the Content-Security-Policy header as needed.
+app.use((req, res, next) => {
+  // If not needed, leave CSP header out.
   next();
 });
 
-// --- Enable CORS and Body Parsing ---
+// Enable CORS and JSON body parser
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static files from the sibling folders
+// Serve static files from sibling directories
 app.use(express.static(path.join(__dirname, '../views')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/items', express.static(path.join(__dirname, '../items')));
@@ -53,6 +49,7 @@ app.get('/', (req, res) => {
    ===================================================== */
 const provider = new ethers.providers.JsonRpcProvider(process.env.BSC_RPC_URL);
 const houseSigner = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+// Minimal ABI: Your contract must implement winBet and loseBet.
 const MET_ABI = [
   "function winBet(address player, uint256 amount) external",
   "function loseBet(address player, uint256 amount) external"
@@ -63,11 +60,15 @@ const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, houseSign
 /* =====================================================
    Off-chain Virtual Balance & Transaction Logging
    ===================================================== */
+// Two in-memory mappings:
+// - userOffchainDeposit: stores player’s locked deposit amount (as string)
+// - userOffchainBalance: stores net play balance (wins/losses; as string)
 const userOffchainDeposit = {};
 const userOffchainBalance = {};
-let houseFunds = 0;
-let transactions = [];
+let houseFunds = 0;    // Aggregated losses (from negative delta updates)
+let transactions = []; // In-memory log (array of transaction objects)
 
+// GET off-chain data for a wallet
 app.get('/api/user/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const deposit = parseFloat(userOffchainDeposit[wallet] || "0");
@@ -76,6 +77,7 @@ app.get('/api/user/:walletAddress', (req, res) => {
   res.json({ wallet, deposit: deposit.toString(), balance: balance.toString(), total });
 });
 
+// POST deposit endpoint – records a deposit value in userOffchainDeposit.
 app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { amount } = req.body;
@@ -96,6 +98,7 @@ app.post('/api/deposit-offchain/:walletAddress', (req, res) => {
   res.json({ wallet, newDeposit: userOffchainDeposit[wallet], message: "Deposit recorded." });
 });
 
+// POST balance-change endpoint – updates the net play balance.
 app.post('/api/balance-change/:walletAddress', (req, res) => {
   const wallet = req.params.walletAddress.toLowerCase();
   const { delta } = req.body;
@@ -103,8 +106,8 @@ app.post('/api/balance-change/:walletAddress', (req, res) => {
     return res.status(400).json({ error: "delta is required" });
   }
   let currentBalance = parseFloat(userOffchainBalance[wallet] || "0");
-  let change = parseFloat(delta);
-  let newBalance = currentBalance + change;
+  const change = parseFloat(delta);
+  const newBalance = currentBalance + change;
   userOffchainBalance[wallet] = newBalance.toString();
   if (change < 0) {
     houseFunds += Math.abs(change);
@@ -113,14 +116,15 @@ app.post('/api/balance-change/:walletAddress', (req, res) => {
   const logEntry = {
     address: wallet,
     amount: delta.toString(),
-    type: (change < 0) ? "bet_loss" : (change > 0 ? "win" : "neutral"),
+    type: change < 0 ? "bet_loss" : (change > 0 ? "win" : "neutral"),
     date: new Date()
   };
   transactions.push(logEntry);
-  console.log("Logged balance change:", logEntry);
+  console.log("Logged balance update:", logEntry);
   res.json({ wallet, newBalance: userOffchainBalance[wallet] });
 });
 
+// POST reconcile endpoint – uses net play balance to call on-chain winBet/loseBet.
 app.post('/api/player/reconcile', async (req, res) => {
   const { wallet } = req.body;
   if (!wallet) return res.status(400).json({ error: "Wallet is required" });
@@ -148,6 +152,7 @@ app.post('/api/player/reconcile', async (req, res) => {
       date: new Date(),
       txHash: receipt.transactionHash
     });
+    // Reset net play balance after reconciliation
     userOffchainBalance[normalized] = "0";
     res.json({
       wallet: normalized,
@@ -163,10 +168,12 @@ app.post('/api/player/reconcile', async (req, res) => {
   }
 });
 
+// Admin: GET transactions log
 app.get('/api/transactions', (req, res) => {
   res.json({ transactions });
 });
 
+// Admin: Download transaction log as CSV and reset log
 app.get('/api/download-transactions', (req, res) => {
   let csvContent = "Address,Amount MET,Type,Date,TxHash\n";
   transactions.forEach(tx => {
@@ -178,13 +185,14 @@ app.get('/api/download-transactions', (req, res) => {
     if (err) {
       console.error("Error downloading transactions:", err);
     } else {
-      console.log("Transactions downloaded; resetting logs.");
+      console.log("Transactions downloaded; resetting log.");
       transactions = [];
     }
     fs.unlinkSync(filePath);
   });
 });
 
+// Admin: GET house funds (requires JWT)
 app.get('/api/admin/house-funds', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -199,6 +207,7 @@ app.get('/api/admin/house-funds', (req, res) => {
   res.json({ houseFunds: houseFunds.toString() });
 });
 
+// Admin: POST cashout house funds (requires JWT)
 app.post('/api/admin/cashout-house', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -218,6 +227,7 @@ app.post('/api/admin/cashout-house', (req, res) => {
   res.json({ cashedOut: cashedOut.toString() });
 });
 
+// Win percentage endpoints (for bonus functionality)
 let winPercentage = parseInt(process.env.WIN_PERCENT) || 30;
 app.get('/api/get-win-percentage', (req, res) => {
   res.json({ percentage: winPercentage });
@@ -232,6 +242,7 @@ app.post('/api/set-win-percentage', (req, res) => {
   }
 });
 
+// Admin login endpoint – returns a JWT token.
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
