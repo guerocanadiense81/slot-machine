@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slot Machine - Free Version</title>
   <link rel="stylesheet" href="/style.css" />
+  <!-- Optional favicon (place favicon.ico in your public folder) -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <!-- Scripts for basic behavior, win logic, and wallet (for updating credits) -->
-  <script src="/script.js" defer></script>
+  <!-- Scripts: Our free-wallet.js simulates deposit/credits; game-logic.js handles the spin outcome -->
+  <script src="/free-wallet.js" defer></script>
   <script src="/game-logic.js" defer></script>
-  <script src="/wallet.js" defer></script>
 </head>
 <body>
   <nav>
@@ -20,7 +20,7 @@
   </nav>
 
   <!-- Credits & Bet Area -->
-  <div id="wallet">
+  <div id="credit-area" style="margin:1em;">
     <div>
       Credits: <span id="credits-display">1000</span> MET
     </div>
@@ -28,13 +28,21 @@
       Bet: <input type="number" id="bet-input" value="50" min="1" />
     </div>
   </div>
-
-  <!-- Slot Machine Container (5 Reels) -->
+  
+  <!-- Deposit Section (for simulation only; in free mode you can optionally allow deposit changes) -->
+  <div id="depositSection" style="margin:1em;">
+    <h3>Manual Deposit (Free Mode)</h3>
+    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET" />
+    <button onclick="manualDeposit()">Deposit MET</button>
+  </div>
+  
+  <!-- Slot Machine Container (5 reels) -->
   <div id="container">
     <div class="window-border">
       <div class="window">
-        <!-- Reel 1 -->
+        <!-- Each reel is represented by .outer-col which contains a .col with 3 .icon items -->
         <div class="outer-spacer"></div>
+        <!-- Reel 1 -->
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
@@ -79,12 +87,12 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
-      </div>
-    </div>
-
+      </div> <!-- .window -->
+    </div> <!-- .window-border -->
+    
     <!-- Message Display -->
     <div id="message-display"></div>
-
+    
     <!-- Spin Button -->
     <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
   </div>
