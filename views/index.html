@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Slot Machine - Free Version</title>
   <link rel="stylesheet" href="/style.css">
-  <!-- For the free version, we only need the basic scripts -->
+  <!-- Include scripts for the free version -->
   <script src="/script.js" defer></script>
   <script src="/game-logic.js" defer></script>
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <nav>
@@ -17,14 +19,12 @@
     <a href="/instructions.html">Instructions</a>
   </nav>
 
-  <!-- Simple Slot Machine Container (without credits or bet amounts) -->
+  <!-- Slot Machine Container (5 Reels) -->
   <div id="container">
     <div class="window-border">
       <div class="window">
-        <!-- Example with 5 reels: Each reel (.col) has three icons for rows 0, 1, 2 -->
-        
-        <div class="outer-spacer"></div>
         <!-- Reel 1 -->
+        <div class="outer-spacer"></div>
         <div class="outer-col">
           <div class="col">
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
@@ -33,54 +33,46 @@
           </div>
         </div>
         <div class="outer-spacer"></div>
-        
         <!-- Reel 2 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
-        
         <!-- Reel 3 -->
         <div class="outer-col">
           <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
             <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
-        
         <!-- Reel 4 -->
         <div class="outer-col">
           <div class="col">
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
             <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
+            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
-        
         <!-- Reel 5 -->
         <div class="outer-col">
           <div class="col">
+            <div class="icon"><img src="items/cherry.png" alt="cherry"></div>
             <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon"></div>
+            <div class="icon"><img src="items/big_win.png" alt="big_win"></div>
           </div>
         </div>
         <div class="outer-spacer"></div>
-      </div> <!-- .window -->
-    </div> <!-- .window-border -->
-    
-    <!-- Message Display (optional) -->
-    <div id="message-display"></div>
-    
-    <!-- Spin Button: Simply calls spin() from game-logic.js -->
+      </div>
+    </div>
+    <!-- Spin Button -->
     <input type="button" onclick="spin(this)" class="start-button" value="Spin">
-  </div> <!-- #container -->
+  </div>
 </body>
 </html>
