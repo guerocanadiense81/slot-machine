@@ -2,21 +2,19 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Free mode detected. Using default simulation balance.");
-  // Set default free simulation deposit as 1000 MET.
+  // Set default deposit for free mode.
   window.initialDeposit = 1000;
-  window.offchainBalance = 0;  // For simplicity, net play balance starts at 0.
-  
-  // Update the UI credits display.
+  window.offchainBalance = 0;  // net play balance starts at 0
   const creditsDisplay = document.getElementById("credits-display");
   if (creditsDisplay) {
     creditsDisplay.innerText = window.initialDeposit.toString();
   }
   
-  // Simulate updateInGameBalance by simply updating the local deposit.
+  // In free mode, updateInGameBalance simply adjusts the simulated total.
   window.updateInGameBalance = function(delta) {
-    console.log(`Simulated off-chain balance update: delta ${delta} MET`);
+    console.log(`Simulated updateInGameBalance: delta ${delta} MET`);
     window.initialDeposit += delta;
-    // Prevent credit from going negative.
+    // Prevent negative credits.
     if (window.initialDeposit < 0) {
       window.initialDeposit = 0;
     }
@@ -27,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return window.initialDeposit;
   };
   
-  // Provide a manual deposit function (since no wallet is connected)
+  // Manual deposit: add funds to the simulated deposit.
   window.manualDeposit = function() {
     const depositInput = document.getElementById("depositInput");
     let amount = parseFloat(depositInput.value);
@@ -35,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please enter a valid deposit amount.");
       return;
     }
-    // Simulate deposit: Add the amount to initialDeposit.
     window.initialDeposit += amount;
     if (creditsDisplay) {
       creditsDisplay.innerText = window.initialDeposit.toString();
