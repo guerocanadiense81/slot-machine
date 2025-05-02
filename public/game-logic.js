@@ -148,8 +148,8 @@ function calculateWin(outcome, betAmount) {
     // 3-in-a-row win.
     for (let i = 0; i <= rowSymbols.length - 3; i++) {
       if (rowSymbols[i] === rowSymbols[i+1] && rowSymbols[i] === rowSymbols[i+2]) {
-        console.log(`Row ${row}: 3-in-a-row win at reels ${i}-${i+2} with "${rowSymbols[i]}" (+1 multiplier)`);
-        totalMultiplier += 1;
+        console.log(`Row ${row}: 3-in-a-row win at reels ${i}-${i+2} with "${rowSymbols[i]}" (+2 multiplier)`);
+        totalMultiplier += 2;
         break; // Count once per row.
       }
     }
@@ -159,8 +159,8 @@ function calculateWin(outcome, betAmount) {
       let pairCount = 0;
       for (let i = 0; i < rowSymbols.length - 1; i++) {
         if (rowSymbols[i] === rowSymbols[i+1]) {
-          console.log(`Row 1: 2-in-a-row win at reels ${i} & ${i+1} with "${rowSymbols[i]}" (+0.1 multiplier)`);
-          totalMultiplier += 0.1;
+          console.log(`Row 1: 2-in-a-row win at reels ${i} & ${i+1} with "${rowSymbols[i]}" (+0.5 multiplier)`);
+          totalMultiplier += 0.5;
           pairCount++;
         }
       }
