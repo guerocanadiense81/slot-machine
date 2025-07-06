@@ -1,6 +1,6 @@
 /**
  * @file game.js
- * @description Final version with corrected random landing logic.
+ * @description Final, complete version with realistic spin and updated win rules.
  */
 const CONFIG = {
     NUM_REELS: 5,
@@ -13,7 +13,8 @@ const CONFIG = {
         multipliers: {
             fiveInRow: 5,
             fiveInRowBigWin: 10,
-            threeInRow: 1.5
+            threeInRow: 1.5,
+            twoInRow: 0.5 // Payout for 2-of-a-kind
         }
     }
 };
@@ -100,20 +101,17 @@ const SlotMachine = {
             
             this.prepareReelForSpin(reel, finalSymbols);
 
-            // Stagger the start of each reel's spin
             setTimeout(() => {
                 reel.classList.add('spinning', 'blur');
             }, i * 150);
         }
 
         for (let i = 0; i < CONFIG.NUM_REELS; i++) {
-            // Stagger the stop of each reel
             setTimeout(() => {
                 this.stopReel(this.dom.reelColumns[i]);
             }, 2000 + (i * 500));
         }
 
-        // Finalize after the last reel has stopped
         setTimeout(() => {
             gameState.isSpinning = false;
             this.dom.spinButton.disabled = false;
@@ -124,11 +122,9 @@ const SlotMachine = {
     prepareReelForSpin(reel, finalSymbols) {
         const wrapper = reel.querySelector('.icons-wrapper');
         
-        // Reset transform and transition to prepare for a new spin animation
         wrapper.style.transition = 'none';
         wrapper.style.transform = 'translateY(0)';
         
-        // Replace the icons at the END of the strip with the new random result
         const icons = wrapper.querySelectorAll('.icon');
         for (let j = 0; j < 3; j++) {
             const iconImg = icons[icons.length - 3 + j].querySelector('img');
@@ -137,23 +133,13 @@ const SlotMachine = {
         }
     },
 
-    /**
-     * THIS IS THE CORRECTED FUNCTION
-     * Stops a single reel and explicitly sets its final position.
-     */
     stopReel(reel) {
         const wrapper = reel.querySelector('.icons-wrapper');
-        
-        // Calculate the final position where the winning icons are visible
         const finalPosition = `translateY(calc(-100% + 300px))`;
         
-        // Remove the infinite spinning animation class
         reel.classList.remove('spinning');
-        
-        // Set the final transform. The transition in the CSS will smooth this out.
         wrapper.style.transform = finalPosition;
         
-        // Keep the blur for a moment during the "landing" for effect
         setTimeout(() => {
             reel.classList.remove('blur');
         }, 500);
@@ -161,16 +147,35 @@ const SlotMachine = {
 
     async calculateWin(outcome) {
         let totalMultiplier = 0;
-        const middleRow = outcome.map(reel => reel[1]);
+        const multipliers = CONFIG.WIN_CONFIG.multipliers;
 
-        if (middleRow.every(s => s === middleRow[0])) {
-            totalMultiplier = middleRow[0] === 'big_win' ? CONFIG.WIN_CONFIG.multipliers.fiveInRowBigWin : CONFIG.WIN_CONFIG.multipliers.fiveInRow;
-        } else {
-            for (let i = 0; i <= middleRow.length - 3; i++) {
-                if (middleRow[i] === middleRow[i + 1] && middleRow[i] === middleRow[i + 2]) {
-                    totalMultiplier = CONFIG.WIN_CONFIG.multipliers.threeInRow;
-                    break;
-                }
+        // Define all 5 potential win lines
+        const winLines = [
+            outcome.map(reel => reel[0]), // Top row
+            outcome.map(reel => reel[1]), // Middle row
+            outcome.map(reel => reel[2]), // Bottom row
+            [outcome[0][0], outcome[1][1], outcome[2][2], outcome[3][1], outcome[4][0]], // V-shape line
+            [outcome[0][2], outcome[1][1], outcome[2][0], outcome[3][1], outcome[4][2]]  // Inverted V-shape
+        ];
+
+        for (const line of winLines) {
+            // Check for 5-in-a-row
+            if (line.every(s => s === line[0])) {
+                totalMultiplier += (line[0] === 'big_win') ? multipliers.fiveInRowBigWin : multipliers.fiveInRow;
+                continue; 
+            }
+            
+            // Check for 4-in-a-row (from left)
+            if (line[0] === line[1] && line[0] === line[2] && line[0] === line[3]) {
+                totalMultiplier += multipliers.threeInRow * 1.5; // Custom multiplier for 4-in-a-row
+            }
+            // Check for 3-in-a-row (from left)
+            else if (line[0] === line[1] && line[0] === line[2]) {
+                totalMultiplier += multipliers.threeInRow;
+            }
+            // Check for 2-in-a-row (from left)
+            else if (line[0] === line[1]) {
+                totalMultiplier += multipliers.twoInRow;
             }
         }
 
