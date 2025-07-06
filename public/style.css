@@ -1,44 +1,21 @@
 /* General Body and Navigation Styles */
 body {
     margin: 0;
-    background: url('/items/background-body.jpg') no-repeat center center fixed;
+    /* Corrected to .png */
+    background: url('/items/background-body.png') no-repeat center center fixed;
     background-size: cover;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: center;
     color: #fff;
 }
-
-nav {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-bottom: 1px solid #FFD700;
-}
-
-nav a {
-    color: white;
-    margin: 0 15px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: color 0.3s;
-}
-
-nav a:hover {
-    color: #FFD700;
-}
-
-h1 {
-    color: white;
-    margin-top: 20px;
-    text-shadow: 2px 2px 4px #000;
-}
-
 /* Main Game Container */
 #container {
     position: relative;
-    top: 40px; /* Adjusted for better centering */
+    top: 40px;
     display: inline-block;
     padding: 20px;
-    background: url('/items/background-slots.jpg') center/cover;
+    /* Corrected to .png */
+    background: url('/items/background-slots.png') center/cover;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(0, 0, 0, 0.5);
 }
