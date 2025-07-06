@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slot Machine - Free Version</title>
   <link rel="stylesheet" href="/style.css" />
-  <!-- Free mode scripts -->
-  <script src="/free-wallet.js" defer></script>
-  <script src="/game-logic.js" defer></script>
 </head>
 <body>
   <nav>
@@ -17,82 +14,26 @@
     <a href="/instructions.html">Instructions</a>
   </nav>
 
-  <!-- Credits & Bet Area -->
-  <div id="credit-area" style="margin:1em;">
-    <div>
-      Credits: <span id="credits-display">1000</span> MET
-    </div>
-    <div>
-      Bet: <input type="number" id="bet-input" value="50" min="1" />
-    </div>
-  </div>
-
-  <!-- Deposit Section (for simulation only) -->
-  <div id="depositSection" style="margin:1em;">
-    <h3>Manual Deposit (Free Mode)</h3>
-    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET" />
-    <button onclick="manualDeposit()">Deposit MET</button>
+  <div class="ui-panel">
+    <h1>Free-to-Play Slots</h1>
+    <div>Credits: <span id="credits-display">1000.00</span></div>
+    <div>Bet: <input type="number" id="bet-input" value="50" min="1" /></div>
+    <div id="message-display">Place your bet!</div>
   </div>
   
-  <!-- Slot Machine Container (5 Reels) -->
   <div id="container">
-    <div class="window-border">
-      <div class="window">
-        <!-- Each reel (.outer-col) contains a .col with three .icon elements -->
-        <div class="outer-spacer"></div>
-        <!-- Reel 1 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 2 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 3 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 4 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 5 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-      </div>
+    <div class="window">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
     </div>
-
-    <!-- Message Display -->
-    <div id="message-display"></div>
-
-    <!-- Spin Button -->
-    <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
+    
+    <input type="button" class="start-button" value="Spin!" />
   </div>
+
+  <script src="/wallet.js" defer></script>
+  <script src="/game.js" defer></script>
 </body>
 </html>
