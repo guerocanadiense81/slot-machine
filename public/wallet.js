@@ -1,8 +1,4 @@
-/**
- * @file wallet.js
- * @description Manages all wallet interactions, balance updates, and API communication.
- * Handles both free-to-play (simulated) and paid (Web3) modes.
- */
+// public/wallet.js
 const Wallet = {
     state: {
         isFreeMode: true,
@@ -21,16 +17,12 @@ const Wallet = {
         this.state.isFreeMode = !this.dom.connectWalletBtn;
 
         if (this.state.isFreeMode) {
-            console.log("Wallet: Initializing in Free Mode.");
             this.updateUIDisplay();
         } else {
-            console.log("Wallet: Initializing in Paid Mode.");
             this.attachEventListeners();
-            if (typeof ethers === "undefined") {
-                console.error("Ethers.js is not loaded! Paid mode will not work.");
-                return;
+            if (typeof ethers !== "undefined") {
+                this.state.provider = new ethers.providers.Web3Provider(window.ethereum);
             }
-            this.state.provider = new ethers.providers.Web3Provider(window.ethereum);
         }
     },
 
@@ -39,16 +31,11 @@ const Wallet = {
             connectWalletBtn: document.getElementById('connectWallet'),
             creditsDisplay: document.getElementById('credits-display'),
             onChainBalanceDisplay: document.getElementById('metOnChainBalance'),
-            depositInput: document.getElementById('depositInput'),
-            depositButton: document.querySelector('#depositSection button'),
-            cashOutButton: document.querySelector('#cashOutSection button')
         };
     },
 
     attachEventListeners() {
         if (this.dom.connectWalletBtn) this.dom.connectWalletBtn.addEventListener('click', () => this.connect());
-        if (this.dom.depositButton) this.dom.depositButton.addEventListener('click', () => this.deposit());
-        if (this.dom.cashOutButton) this.dom.cashOutButton.addEventListener('click', () => this.reconcile());
     },
 
     async connect() {
@@ -56,7 +43,6 @@ const Wallet = {
         try {
             const accounts = await this.state.provider.send("eth_requestAccounts", []);
             this.state.walletAddress = accounts[0];
-            this.state.signer = this.state.provider.getSigner();
             this.dom.connectWalletBtn.textContent = `Connected: ${this.state.walletAddress.substring(0, 6)}...`;
             await this.fetchOffChainBalance();
             await this.fetchOnChainBalance();
@@ -74,7 +60,7 @@ const Wallet = {
     },
 
     async fetchOnChainBalance() {
-        if (!this.state.signer) return;
+        if (!this.state.walletAddress) return;
         const contract = new ethers.Contract(this.MET_CONTRACT_ADDRESS, this.MET_ABI, this.state.provider);
         const balanceBN = await contract.balanceOf(this.state.walletAddress);
         this.state.onChainBalance = ethers.utils.formatUnits(balanceBN, 18);
@@ -95,7 +81,7 @@ const Wallet = {
                     body: JSON.stringify({ delta })
                 });
             } catch (error) {
-                this.state.credits -= delta; // Revert on failure
+                this.state.credits -= delta;
             }
         }
         this.updateUIDisplay();
