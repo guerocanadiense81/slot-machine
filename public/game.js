@@ -1,17 +1,16 @@
 /**
  * @file game.js
- * @description Controls the entire slot machine game logic, including state management,
- * spinning, win calculation, and UI updates for both free and paid modes.
+ * @description Final version with realistic, multi-stage spin animation.
  */
 const CONFIG = {
     NUM_REELS: 5,
-    NUM_ICONS_PER_REEL: 30, // How many icons to generate for the spin animation
+    // A longer icon strip creates a better spinning illusion
+    NUM_ICONS_PER_REEL: 30,
     SYMBOLS: [
-        "apple", "apricot", "banana", "big_win", "cherry", "grapes", "lemon", 
+        "apple", "apricot", "banana", "big_win", "cherry", "grapes", "lemon",
         "lucky_seven", "orange", "pear", "strawberry", "watermelon"
     ],
     WIN_CONFIG: {
-        forcedWinChance: 0.05,
         multipliers: {
             fiveInRow: 5,
             fiveInRowBigWin: 10,
@@ -30,12 +29,14 @@ const SlotMachine = {
         this.cacheDOMElements();
         this.attachEventListeners();
         this.setupInitialReels();
-        window.Wallet.init();
+        // Assuming wallet.js is loaded and provides a global Wallet object
+        if (window.Wallet) {
+            window.Wallet.init();
+        }
     },
 
     cacheDOMElements() {
         this.dom = {
-            container: document.getElementById('container'),
             spinButton: document.querySelector('.start-button'),
             betInput: document.getElementById('bet-input'),
             messageDisplay: document.getElementById('message-display'),
@@ -50,6 +51,7 @@ const SlotMachine = {
         });
     },
 
+    // Creates the icon elements for each reel
     setupInitialReels() {
         this.dom.reelColumns.forEach(col => {
             col.innerHTML = '';
@@ -70,61 +72,94 @@ const SlotMachine = {
         return iconEl;
     },
 
+    // Generates the final 3-row outcome for the reels
+    generateReelOutcome() {
+        return Array.from({ length: CONFIG.NUM_REELS }, () =>
+            Array.from({ length: 3 }, () => this.getRandomSymbol())
+        );
+    },
+
+    /**
+     * The main spin handler with multi-stage animation logic.
+     */
     async spin() {
         if (gameState.isSpinning) return;
-
-        gameState.betAmount = parseFloat(this.dom.betInput.value);
-        if (!window.Wallet.checkBalance(gameState.betAmount)) {
-            this.showMessage("Not enough credits!", false);
-            return;
-        }
-
         gameState.isSpinning = true;
         this.dom.spinButton.disabled = true;
         this.showMessage("Spinning...", true);
-        await window.Wallet.updateBalance(-gameState.betAmount);
 
-        this.dom.reelColumns.forEach((col, index) => {
-            const wrapper = col.querySelector('.icons-wrapper');
-            wrapper.style.transition = 'none';
-            wrapper.style.transform = `translateY(0)`;
-            wrapper.offsetHeight; 
-            wrapper.style.transition = `transform ${3 + index * 0.2}s cubic-bezier(0.34, 1.56, 0.64, 1)`;
-        });
+        // Deduct bet amount (assuming a Wallet object exists)
+        gameState.betAmount = parseFloat(this.dom.betInput.value);
+        if (window.Wallet && !window.Wallet.checkBalance(gameState.betAmount)) {
+            this.showMessage("Not enough credits!", false);
+            gameState.isSpinning = false;
+            this.dom.spinButton.disabled = false;
+            return;
+        }
+        if (window.Wallet) {
+            await window.Wallet.updateBalance(-gameState.betAmount);
+        }
 
         const outcome = this.generateReelOutcome();
-        this.updateReelsForSpin(outcome);
-        this.dom.container.classList.add('spinning');
-        
+
+        // 1. Start each reel spinning with a delay
+        for (let i = 0; i < CONFIG.NUM_REELS; i++) {
+            setTimeout(() => {
+                const reel = this.dom.reelColumns[i];
+                this.prepareReelForSpin(reel, outcome[i]);
+                reel.classList.add('spinning', 'blur');
+            }, i * 150); // Staggered start
+        }
+
+        // 2. Stop each reel sequentially
+        for (let i = 0; i < CONFIG.NUM_REELS; i++) {
+            setTimeout(() => {
+                this.stopReel(this.dom.reelColumns[i]);
+            }, 2000 + (i * 500)); // Staggered stop
+        }
+
+        // 3. Finalize after the last reel stops
         setTimeout(() => {
-            this.dom.container.classList.remove('spinning');
             gameState.isSpinning = false;
             this.dom.spinButton.disabled = false;
             this.calculateWin(outcome);
-        }, 4500);
+        }, 2000 + (CONFIG.NUM_REELS * 500));
     },
 
-    updateReelsForSpin(outcome) {
-        this.dom.reelColumns.forEach((col, i) => {
-            const wrapper = col.querySelector('.icons-wrapper');
-            const icons = wrapper.querySelectorAll('.icon');
-            // The last icon in the strip should be the first winning symbol
-            const finalIcon = icons[icons.length - 3];
-            finalIcon.innerHTML = `<img src="items/${outcome[i][0]}.png" alt="${outcome[i][0]}" />`;
-        });
+    /**
+     * Resets the reel and loads the winning icons at the end of the icon strip.
+     */
+    prepareReelForSpin(reel, finalSymbols) {
+        const wrapper = reel.querySelector('.icons-wrapper');
+        // Reset transform without transition to prepare for animation
+        wrapper.style.transition = 'none';
+        wrapper.style.transform = 'translateY(0)';
+        
+        // Replace the last 3 icons with the final outcome
+        const icons = wrapper.querySelectorAll('.icon');
+        for (let j = 0; j < 3; j++) {
+            const iconImg = icons[icons.length - 3 + j].querySelector('img');
+            iconImg.src = `items/${finalSymbols[j]}.png`;
+            iconImg.alt = finalSymbols[j];
+        }
     },
 
-    generateReelOutcome() {
-        const reels = Array.from({ length: CONFIG.NUM_REELS }, () =>
-            Array.from({ length: 3 }, () => this.getRandomSymbol())
-        );
-        return reels;
+    /**
+     * Stops a single reel, removes animation classes, and lands it on the result.
+     */
+    stopReel(reel) {
+        reel.classList.remove('spinning');
+        
+        // After a short delay to let it land, remove the blur
+        setTimeout(() => {
+            reel.classList.remove('blur');
+        }, 500); // Keep blur during the "thud" animation
     },
 
     async calculateWin(outcome) {
         let totalMultiplier = 0;
-        const middleRow = outcome.map(reel => reel[1]);
-        
+        const middleRow = outcome.map(reel => reel[1]); // Win line is the middle row
+
         if (middleRow.every(s => s === middleRow[0])) {
             totalMultiplier = middleRow[0] === 'big_win' ? CONFIG.WIN_CONFIG.multipliers.fiveInRowBigWin : CONFIG.WIN_CONFIG.multipliers.fiveInRow;
         } else {
@@ -138,7 +173,7 @@ const SlotMachine = {
 
         if (totalMultiplier > 0) {
             const winnings = gameState.betAmount * totalMultiplier;
-            await window.Wallet.updateBalance(winnings);
+            if (window.Wallet) await window.Wallet.updateBalance(winnings);
             this.showMessage(`You won ${winnings.toFixed(2)}!`, true);
         } else {
             this.showMessage("Better luck next time!", false);
