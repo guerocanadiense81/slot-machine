@@ -3,14 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Slot Machine - Paid Version</title>
-  <link rel="stylesheet" href="/paid.css" />
-  <!-- Include ethers.js for wallet interaction -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- Standard scripts used by the game -->
-  <script src="/script.js" defer></script>
-  <script src="/game-logic.js" defer></script>
-  <script src="/wallet.js" defer></script>
+  <title>Crypto Slot Machine</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <nav>
@@ -20,94 +14,40 @@
     <a href="/instructions.html">Instructions</a>
   </nav>
 
-  <!-- Wallet & Balance Section -->
-  <div id="wallet" style="margin: 1em auto;">
-    <div>
-      Off-chain Balance: <span id="credits-display">0</span> MET
-    </div>
-    <div>
-      On-chain MET: <span id="metOnChainBalance">0</span> MET
-    </div>
+  <div class="ui-panel">
+    <h1>Crypto Slot Machine</h1>
+    <div>Off-chain Balance: <span id="credits-display">0.00</span> MET</div>
+    <div>On-chain Balance: <span id="metOnChainBalance">0.00</span> MET</div>
+    <div>Bet: <input type="number" id="bet-input" value="50" min="1" /></div>
+    <div id="message-display">Place your bet!</div>
     <button id="connectWallet">Connect Wallet</button>
   </div>
-
-  <!-- Deposit Section -->
-  <div id="depositSection" style="margin: 1em auto;">
+  
+  <div class="ui-panel" id="depositSection">
     <h3>Manual Deposit</h3>
-    <input type="number" id="depositInput" placeholder="Enter deposit amount in MET" />
-    <button onclick="manualDeposit()">Deposit MET</button>
+    <input type="number" id="depositInput" placeholder="Enter MET amount" />
+    <button>Deposit MET</button>
   </div>
 
-  <!-- Reconciliation / Finish Game Section -->
-  <div id="cashOutSection" style="margin: 1em auto;">
-    <h3>Finish Game & Cash Out</h3>
-    <button onclick="reconcileSession()">Finish Game (Reconcile)</button>
-  </div>
-
-  <!-- Game UI Panel -->
-  <div id="game-ui" style="margin: 1em auto; color: #fff;">
-    <div>
-      Bet: <input type="number" id="bet-input" value="50" min="1" />
-    </div>
-    <div id="message-display"></div>
-  </div>
-
-  <!-- Slot Machine Container (5 Reels) -->
   <div id="container">
-    <div class="window-border">
-      <div class="window">
-        <!-- Each reel (.outer-col) contains a .col with three .icon elements -->
-        <div class="outer-spacer"></div>
-        <!-- Reel 1 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 2 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 3 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 4 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-        <!-- Reel 5 -->
-        <div class="outer-col">
-          <div class="col">
-            <div class="icon"><img src="items/cherry.png" alt="cherry" /></div>
-            <div class="icon"><img src="items/lemon.png" alt="lemon" /></div>
-            <div class="icon"><img src="items/big_win.png" alt="big_win" /></div>
-          </div>
-        </div>
-        <div class="outer-spacer"></div>
-      </div>
+    <div class="window">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
     </div>
-
-    <!-- Spin Button -->
-    <input type="button" onclick="spin(this)" class="start-button" value="Spin" />
+    
+    <input type="button" class="start-button" value="Spin!" />
   </div>
+
+  <div class="ui-panel" id="cashOutSection">
+    <h3>Finish & Cash Out</h3>
+    <button>Reconcile Session</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="/wallet.js" defer></script>
+  <script src="/game.js" defer></script>
 </body>
 </html>
