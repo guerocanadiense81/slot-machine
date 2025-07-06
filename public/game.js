@@ -1,6 +1,6 @@
 /**
  * @file game.js
- * @description Final, complete version with realistic spin and updated win rules.
+ * @description Final, complete version with realistic spin, expanded win rules, and jackpot.
  */
 const CONFIG = {
     NUM_REELS: 5,
@@ -12,9 +12,9 @@ const CONFIG = {
     WIN_CONFIG: {
         multipliers: {
             fiveInRow: 5,
-            fiveInRowBigWin: 10,
+            fiveInRowBigWin: 10, // This is now a fallback, jackpot is separate
             threeInRow: 1.5,
-            twoInRow: 0.5 // Payout for 2-of-a-kind
+            twoInRow: 0.5
         }
     }
 };
@@ -29,6 +29,7 @@ const SlotMachine = {
         this.cacheDOMElements();
         this.attachEventListeners();
         this.setupInitialReels();
+        // Assumes a global Wallet object is provided by wallet.js
         if (window.Wallet) {
             window.Wallet.init();
         }
@@ -147,38 +148,48 @@ const SlotMachine = {
 
     async calculateWin(outcome) {
         let totalMultiplier = 0;
+        let isJackpot = false;
         const multipliers = CONFIG.WIN_CONFIG.multipliers;
 
-        // Define all 5 potential win lines
         const winLines = [
             outcome.map(reel => reel[0]), // Top row
             outcome.map(reel => reel[1]), // Middle row
             outcome.map(reel => reel[2]), // Bottom row
-            [outcome[0][0], outcome[1][1], outcome[2][2], outcome[3][1], outcome[4][0]], // V-shape line
+            [outcome[0][0], outcome[1][1], outcome[2][2], outcome[3][1], outcome[4][0]], // V-shape
             [outcome[0][2], outcome[1][1], outcome[2][0], outcome[3][1], outcome[4][2]]  // Inverted V-shape
         ];
 
+        // First, check for the special jackpot case
         for (const line of winLines) {
-            // Check for 5-in-a-row
+            if (line.every(s => s === 'big_win')) {
+                isJackpot = true;
+                break;
+            }
+        }
+
+        if (isJackpot) {
+            const winnings = 250.00; // Fixed jackpot amount
+            if (window.Wallet) await window.Wallet.updateBalance(winnings);
+            this.showMessage(`JACKPOT! You won ${winnings.toFixed(2)}!`, true);
+            return; // Exit function after jackpot
+        }
+
+        // If no jackpot, calculate normal wins
+        for (const line of winLines) {
             if (line.every(s => s === line[0])) {
-                totalMultiplier += (line[0] === 'big_win') ? multipliers.fiveInRowBigWin : multipliers.fiveInRow;
-                continue; 
+                totalMultiplier += multipliers.fiveInRow;
+                continue;
             }
-            
-            // Check for 4-in-a-row (from left)
             if (line[0] === line[1] && line[0] === line[2] && line[0] === line[3]) {
-                totalMultiplier += multipliers.threeInRow * 1.5; // Custom multiplier for 4-in-a-row
-            }
-            // Check for 3-in-a-row (from left)
-            else if (line[0] === line[1] && line[0] === line[2]) {
+                totalMultiplier += multipliers.threeInRow * 1.5;
+            } else if (line[0] === line[1] && line[0] === line[2]) {
                 totalMultiplier += multipliers.threeInRow;
-            }
-            // Check for 2-in-a-row (from left)
-            else if (line[0] === line[1]) {
+            } else if (line[0] === line[1]) {
                 totalMultiplier += multipliers.twoInRow;
             }
         }
 
+        // Finalize normal wins
         if (totalMultiplier > 0) {
             const winnings = gameState.betAmount * totalMultiplier;
             if (window.Wallet) await window.Wallet.updateBalance(winnings);
