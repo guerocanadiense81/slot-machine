@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Slot Machine - Free Version</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <nav>
+    <a href="/index.html">Free Version</a> |
+    <a href="/paid-game.html">Paid Version</a> |
+    <a href="/contact.html">Contact</a> |
+    <a href="/instructions.html">Instructions</a>
+  </nav>
+
+  <div class="ui-panel">
+    <h1>Free-to-Play Slots</h1>
+    <div>Credits: <span id="credits-display">1000.00</span></div>
+    <div>Bet: <input type="number" id="bet-input" value="50" min="1" /></div>
+    <div id="message-display">Place your bet!</div>
+  </div>
+  
+  <div id="container">
+    <div class="window">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    
+    <input type="button" class="start-button" value="Spin!" />
+  </div>
+
+  <script src="/wallet.js" defer></script>
+  <script src="/game.js" defer></script>
+</body>
+</html>

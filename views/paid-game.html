@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crypto Slot Machine</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <nav>
+    <a href="/index.html">Free Version</a> |
+    <a href="/paid-game.html">Paid Version</a> |
+    <a href="/contact.html">Contact</a> |
+    <a href="/instructions.html">Instructions</a>
+  </nav>
+
+  <div class="ui-panel">
+    <h1>Crypto Slot Machine</h1>
+    <div>Off-chain Balance: <span id="credits-display">0.00</span> MET</div>
+    <div>On-chain Balance: <span id="metOnChainBalance">0.00</span> MET</div>
+    <div>Bet: <input type="number" id="bet-input" value="50" min="1" /></div>
+    <div id="message-display">Place your bet!</div>
+    <button id="connectWallet">Connect Wallet</button>
+  </div>
+  
+  <div class="ui-panel" id="depositSection">
+    <h3>Manual Deposit</h3>
+    <input type="number" id="depositInput" placeholder="Enter MET amount" />
+    <button>Deposit MET</button>
+  </div>
+
+  <div id="container">
+    <div class="window">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    
+    <input type="button" class="start-button" value="Spin!" />
+  </div>
+
+  <div class="ui-panel" id="cashOutSection">
+    <h3>Finish & Cash Out</h3>
+    <button>Reconcile Session</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="/wallet.js" defer></script>
+  <script src="/game.js" defer></script>
+</body>
+</html>

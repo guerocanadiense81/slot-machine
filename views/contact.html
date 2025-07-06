@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/contact.js" defer></script>
+</head>
+<body>
+  <nav>
+    <a href="/index.html">Free Version</a> |
+    <a href="/paid-game.html">Paid Version</a> |
+    <a href="/contact.html">Contact</a> |
+    <a href="/instructions.html">Instructions</a>
+  </nav>
+  
+  <h1>Contact Us</h1>
+  <form id="contactForm">
+    <input type="text" id="name" placeholder="Your Name" required><br>
+    <input type="email" id="email" placeholder="Your Email" required><br>
+    <textarea id="message" placeholder="Your Message" required></textarea><br>
+    <button type="submit">Send Message</button>
+  </form>
+  <div id="successMessage" style="display:none;color:green;">Message sent successfully!</div>
+</body>
+</html>
