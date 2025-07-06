@@ -1,43 +1,110 @@
-// public/free-wallet.js
+/**
+ * @file wallet.js
+ * @description Manages all wallet interactions, balance updates, and API communication.
+ * Handles both free-to-play (simulated) and paid (Web3) modes.
+ */
+const Wallet = {
+    state: {
+        isFreeMode: true,
+        credits: 1000,
+        onChainBalance: 0,
+        walletAddress: null,
+        provider: null,
+        signer: null,
+    },
+    dom: {},
+    MET_CONTRACT_ADDRESS: "0xb80b92Be7402E1e2D3189fff261D672D8104b322",
+    MET_ABI: ["function balanceOf(address owner) view returns (uint256)"],
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("Free mode detected. Using default simulation balance.");
-  // Set default deposit for free mode.
-  window.initialDeposit = 1000;
-  window.offchainBalance = 0;  // net play balance starts at 0
-  const creditsDisplay = document.getElementById("credits-display");
-  if (creditsDisplay) {
-    creditsDisplay.innerText = window.initialDeposit.toString();
-  }
-  
-  // In free mode, updateInGameBalance simply adjusts the simulated total.
-  window.updateInGameBalance = function(delta) {
-    console.log(`Simulated updateInGameBalance: delta ${delta} MET`);
-    window.initialDeposit += delta;
-    // Prevent negative credits.
-    if (window.initialDeposit < 0) {
-      window.initialDeposit = 0;
+    init() {
+        this.cacheDOMElements();
+        this.state.isFreeMode = !this.dom.connectWalletBtn;
+
+        if (this.state.isFreeMode) {
+            console.log("Wallet: Initializing in Free Mode.");
+            this.updateUIDisplay();
+        } else {
+            console.log("Wallet: Initializing in Paid Mode.");
+            this.attachEventListeners();
+            if (typeof ethers === "undefined") {
+                console.error("Ethers.js is not loaded! Paid mode will not work.");
+                return;
+            }
+            this.state.provider = new ethers.providers.Web3Provider(window.ethereum);
+        }
+    },
+
+    cacheDOMElements() {
+        this.dom = {
+            connectWalletBtn: document.getElementById('connectWallet'),
+            creditsDisplay: document.getElementById('credits-display'),
+            onChainBalanceDisplay: document.getElementById('metOnChainBalance'),
+            depositInput: document.getElementById('depositInput'),
+            depositButton: document.querySelector('#depositSection button'),
+            cashOutButton: document.querySelector('#cashOutSection button')
+        };
+    },
+
+    attachEventListeners() {
+        if (this.dom.connectWalletBtn) this.dom.connectWalletBtn.addEventListener('click', () => this.connect());
+        if (this.dom.depositButton) this.dom.depositButton.addEventListener('click', () => this.deposit());
+        if (this.dom.cashOutButton) this.dom.cashOutButton.addEventListener('click', () => this.reconcile());
+    },
+
+    async connect() {
+        if (!window.ethereum) return alert("Please install MetaMask.");
+        try {
+            const accounts = await this.state.provider.send("eth_requestAccounts", []);
+            this.state.walletAddress = accounts[0];
+            this.state.signer = this.state.provider.getSigner();
+            this.dom.connectWalletBtn.textContent = `Connected: ${this.state.walletAddress.substring(0, 6)}...`;
+            await this.fetchOffChainBalance();
+            await this.fetchOnChainBalance();
+        } catch (error) {
+            console.error("Failed to connect wallet:", error);
+        }
+    },
+
+    async fetchOffChainBalance() {
+        if (!this.state.walletAddress) return;
+        const res = await fetch(`/api/user/${this.state.walletAddress.toLowerCase()}`);
+        const data = await res.json();
+        this.state.credits = parseFloat(data.total);
+        this.updateUIDisplay();
+    },
+
+    async fetchOnChainBalance() {
+        if (!this.state.signer) return;
+        const contract = new ethers.Contract(this.MET_CONTRACT_ADDRESS, this.MET_ABI, this.state.provider);
+        const balanceBN = await contract.balanceOf(this.state.walletAddress);
+        this.state.onChainBalance = ethers.utils.formatUnits(balanceBN, 18);
+        this.updateUIDisplay();
+    },
+
+    checkBalance(amount) {
+        return this.state.credits >= amount;
+    },
+
+    async updateBalance(delta) {
+        this.state.credits += delta;
+        if (!this.state.isFreeMode && this.state.walletAddress) {
+            try {
+                await fetch(`/api/balance-change/${this.state.walletAddress.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ delta })
+                });
+            } catch (error) {
+                this.state.credits -= delta; // Revert on failure
+            }
+        }
+        this.updateUIDisplay();
+    },
+    
+    updateUIDisplay() {
+        if (this.dom.creditsDisplay) this.dom.creditsDisplay.textContent = this.state.credits.toFixed(2);
+        if (this.dom.onChainBalanceDisplay) this.dom.onChainBalanceDisplay.textContent = parseFloat(this.state.onChainBalance).toFixed(2);
     }
-    if (creditsDisplay) {
-      creditsDisplay.innerText = window.initialDeposit.toString();
-    }
-    console.log("New simulated balance:", window.initialDeposit);
-    return window.initialDeposit;
-  };
-  
-  // Manual deposit: add funds to the simulated deposit.
-  window.manualDeposit = function() {
-    const depositInput = document.getElementById("depositInput");
-    let amount = parseFloat(depositInput.value);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid deposit amount.");
-      return;
-    }
-    window.initialDeposit += amount;
-    if (creditsDisplay) {
-      creditsDisplay.innerText = window.initialDeposit.toString();
-    }
-    console.log(`Simulated deposit: added ${amount} MET, new balance: ${window.initialDeposit} MET`);
-    alert("Deposit recorded.");
-  };
-});
+};
+
+window.Wallet = Wallet;
