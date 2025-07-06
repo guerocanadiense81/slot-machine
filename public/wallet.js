@@ -1,207 +1,110 @@
-// public/wallet.js
+/**
+ * @file wallet.js
+ * @description Manages all wallet interactions, balance updates, and API communication.
+ * Handles both free-to-play (simulated) and paid (Web3) modes.
+ */
+const Wallet = {
+    state: {
+        isFreeMode: true,
+        credits: 1000,
+        onChainBalance: 0,
+        walletAddress: null,
+        provider: null,
+        signer: null,
+    },
+    dom: {},
+    MET_CONTRACT_ADDRESS: "0xb80b92Be7402E1e2D3189fff261D672D8104b322",
+    MET_ABI: ["function balanceOf(address owner) view returns (uint256)"],
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOM fully loaded; initializing wallet connection...");
-  
-  // Defaults for free version when wallet is not available.
-  window.offchainBalance = 0;
-  window.initialDeposit = 0;
+    init() {
+        this.cacheDOMElements();
+        this.state.isFreeMode = !this.dom.connectWalletBtn;
 
-  // If MetaMask is not available, we assume free version and assign default credits.
-  if (!window.ethereum) {
-    console.log("MetaMask not detected. Using default free version balance of 1000 MET.");
-    window.initialDeposit = 1000;
-    window.offchainBalance = 0;
-    const creditsDisplay = document.getElementById("credits-display");
-    if (creditsDisplay) creditsDisplay.innerText = "1000";
-    // Skip wallet connection and on-chain balance retrieval.
-  } else {
-    // Flag to prevent duplicate wallet account requests.
-    let isRequestingAccounts = false;
-
-    async function connectWalletAndLoadBalances() {
-      if (isRequestingAccounts) {
-        console.log("Already processing wallet connection request. Please wait.");
-        return;
-      }
-      console.log("Connect Wallet button clicked.");
-      isRequestingAccounts = true;
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        if (!accounts || !accounts.length) {
-          console.log("No accounts returned.");
-          isRequestingAccounts = false;
-          return;
+        if (this.state.isFreeMode) {
+            console.log("Wallet: Initializing in Free Mode.");
+            this.updateUIDisplay();
+        } else {
+            console.log("Wallet: Initializing in Paid Mode.");
+            this.attachEventListeners();
+            if (typeof ethers === "undefined") {
+                console.error("Ethers.js is not loaded! Paid mode will not work.");
+                return;
+            }
+            this.state.provider = new ethers.providers.Web3Provider(window.ethereum);
         }
-        const walletAddress = accounts[0];
-        console.log("Connected wallet:", walletAddress);
-        window.userWallet = walletAddress;
-        alert("Wallet connected: " + walletAddress);
+    },
 
-        // Fetch off-chain data from the backend.
-        const response = await fetch(`/api/user/${walletAddress.toLowerCase()}`);
-        const data = await response.json();
-        console.log("Fetched off-chain user data:", data);
-        const creditsDisplay = document.getElementById("credits-display");
-        if (creditsDisplay) {
-          creditsDisplay.innerText = data.total;
+    cacheDOMElements() {
+        this.dom = {
+            connectWalletBtn: document.getElementById('connectWallet'),
+            creditsDisplay: document.getElementById('credits-display'),
+            onChainBalanceDisplay: document.getElementById('metOnChainBalance'),
+            depositInput: document.getElementById('depositInput'),
+            depositButton: document.querySelector('#depositSection button'),
+            cashOutButton: document.querySelector('#cashOutSection button')
+        };
+    },
+
+    attachEventListeners() {
+        if (this.dom.connectWalletBtn) this.dom.connectWalletBtn.addEventListener('click', () => this.connect());
+        if (this.dom.depositButton) this.dom.depositButton.addEventListener('click', () => this.deposit());
+        if (this.dom.cashOutButton) this.dom.cashOutButton.addEventListener('click', () => this.reconcile());
+    },
+
+    async connect() {
+        if (!window.ethereum) return alert("Please install MetaMask.");
+        try {
+            const accounts = await this.state.provider.send("eth_requestAccounts", []);
+            this.state.walletAddress = accounts[0];
+            this.state.signer = this.state.provider.getSigner();
+            this.dom.connectWalletBtn.textContent = `Connected: ${this.state.walletAddress.substring(0, 6)}...`;
+            await this.fetchOffChainBalance();
+            await this.fetchOnChainBalance();
+        } catch (error) {
+            console.error("Failed to connect wallet:", error);
         }
-        window.offchainBalance = parseFloat(data.balance) || 0;
-        window.initialDeposit = parseFloat(data.deposit) || 0;
+    },
 
-        await getOnChainMETBalance();
-      } catch (error) {
-        console.error("Error connecting wallet:", error);
-        alert("Error connecting wallet. Check console for details.");
-      } finally {
-        isRequestingAccounts = false;
-      }
-    }
+    async fetchOffChainBalance() {
+        if (!this.state.walletAddress) return;
+        const res = await fetch(`/api/user/${this.state.walletAddress.toLowerCase()}`);
+        const data = await res.json();
+        this.state.credits = parseFloat(data.total);
+        this.updateUIDisplay();
+    },
 
-    async function getOnChainMETBalance() {
-      if (!window.ethereum) return;
-      try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
-        const walletAddress = await signer.getAddress();
-        const MET_ABI = ["function balanceOf(address owner) view returns (uint256)"];
-        const MET_CONTRACT_ADDRESS = "0xb80b92Be7402E1e2D3189fff261D672D8104b322";
-        const metContract = new ethers.Contract(MET_CONTRACT_ADDRESS, MET_ABI, provider);
-        const balanceBN = await metContract.balanceOf(walletAddress);
-        const formattedBalance = ethers.utils.formatUnits(balanceBN, 18);
-        const onChainBalanceElement = document.getElementById("metOnChainBalance");
-        if (onChainBalanceElement) {
-          onChainBalanceElement.innerText = formattedBalance;
+    async fetchOnChainBalance() {
+        if (!this.state.signer) return;
+        const contract = new ethers.Contract(this.MET_CONTRACT_ADDRESS, this.MET_ABI, this.state.provider);
+        const balanceBN = await contract.balanceOf(this.state.walletAddress);
+        this.state.onChainBalance = ethers.utils.formatUnits(balanceBN, 18);
+        this.updateUIDisplay();
+    },
+
+    checkBalance(amount) {
+        return this.state.credits >= amount;
+    },
+
+    async updateBalance(delta) {
+        this.state.credits += delta;
+        if (!this.state.isFreeMode && this.state.walletAddress) {
+            try {
+                await fetch(`/api/balance-change/${this.state.walletAddress.toLowerCase()}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ delta })
+                });
+            } catch (error) {
+                this.state.credits -= delta; // Revert on failure
+            }
         }
-        console.log("On-chain MET balance:", formattedBalance);
-      } catch (error) {
-        console.error("Error fetching on-chain MET balance:", error);
-      }
+        this.updateUIDisplay();
+    },
+    
+    updateUIDisplay() {
+        if (this.dom.creditsDisplay) this.dom.creditsDisplay.textContent = this.state.credits.toFixed(2);
+        if (this.dom.onChainBalanceDisplay) this.dom.onChainBalanceDisplay.textContent = parseFloat(this.state.onChainBalance).toFixed(2);
     }
+};
 
-    const connectWalletBtn = document.getElementById("connectWallet");
-    if (connectWalletBtn) {
-      connectWalletBtn.addEventListener("click", connectWalletAndLoadBalances);
-      console.log("connectWallet event listener attached.");
-    } else {
-      console.error("Connect Wallet button not found in DOM.");
-    }
-  }
-
-  // updateInGameBalance: sends a POST to update the net play balance.
-  window.updateInGameBalance = async function(delta) {
-    // In free version with default balances, we can simply update the UI.
-    if (!window.userWallet && !window.ethereum) {
-      // Free version simulation
-      console.log(`Updating simulated off-chain balance by ${delta} MET`);
-      let current = parseFloat(document.getElementById("credits-display").innerText) || 0;
-      current += delta;
-      document.getElementById("credits-display").innerText = current.toString();
-      window.initialDeposit = current;  // Reflect simulated deposit.
-      window.offchainBalance = 0;
-      return current;
-    }
-
-    if (!window.userWallet) {
-      alert("Wallet not connected.");
-      return;
-    }
-    try {
-      const response = await fetch(`/api/balance-change/${window.userWallet.toLowerCase()}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ delta: delta })
-      });
-      const result = await response.json();
-      console.log("Balance update response:", result);
-      // Refresh the user's off-chain data
-      const userResponse = await fetch(`/api/user/${window.userWallet.toLowerCase()}`);
-      const data = await userResponse.json();
-      console.log("Refreshed off-chain user data:", data);
-      const total = parseFloat(data.deposit) + parseFloat(data.balance);
-      const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) {
-        creditsDisplay.innerText = total.toString();
-      }
-      window.offchainBalance = parseFloat(data.balance) || 0;
-      return data.balance;
-    } catch (error) {
-      console.error("Error updating off-chain balance:", error);
-    }
-  };
-
-  // manualDeposit: calls the deposit endpoint.
-  window.manualDeposit = async function() {
-    const depositInput = document.getElementById("depositInput");
-    let amount = parseFloat(depositInput.value);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid deposit amount.");
-      return;
-    }
-    try {
-      const response = await fetch(`/api/deposit-offchain/${window.userWallet ? window.userWallet.toLowerCase() : "free"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amount })
-      });
-      const result = await response.json();
-      console.log("Deposit response:", result);
-      alert(result.message);
-      // Refresh user data after deposit.
-      const userResponse = await fetch(`/api/user/${window.userWallet ? window.userWallet.toLowerCase() : "free"}`);
-      const data = await userResponse.json();
-      console.log("Post-deposit off-chain user data:", data);
-      const total = parseFloat(data.deposit) + parseFloat(data.balance);
-      const creditsDisplay = document.getElementById("credits-display");
-      if (creditsDisplay) {
-        creditsDisplay.innerText = total.toString();
-      }
-      window.initialDeposit = parseFloat(data.deposit) || 0;
-    } catch (error) {
-      console.error("Error during deposit:", error);
-      alert("Error during deposit. Check console for details.");
-    }
-  };
-
-  // reconcileSession: calls the reconcile endpoint.
-  window.reconcileSession = async function() {
-    if (!window.userWallet && !window.ethereum) {
-      alert("Free version mode: no on-chain reconciliation necessary.");
-      return;
-    }
-    if (!window.userWallet) {
-      alert("Wallet not connected.");
-      return;
-    }
-    try {
-      const payload = {
-        wallet: window.userWallet,
-        initialDeposit: window.initialDeposit,
-        finalBalance: window.offchainBalance
-      };
-      const response = await fetch("/api/player/reconcile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      alert("Session reconciled. " + data.message + "\nTX Hash: " + data.txHash);
-    } catch (error) {
-      console.error("Error during reconciliation:", error);
-      alert("Error during reconciliation. Check console for details.");
-    }
-  };
-
-  window.addEventListener("beforeunload", () => {
-    if (window.userWallet) {
-      const payload = JSON.stringify({
-        wallet: window.userWallet,
-        initialDeposit: window.initialDeposit,
-        finalBalance: window.offchainBalance
-      });
-      const blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon("/api/player/reconcile", blob);
-    }
-  });
-});
+window.Wallet = Wallet;
